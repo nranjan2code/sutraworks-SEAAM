@@ -67,20 +67,29 @@ class Architect:
 
         CRITICAL KERNEL CONTRACT: 
         - The system HAS a nervous system: `seaam.kernel.bus`. 
-        - Modules can import `bus` and use `bus.subscribe("file_modified", callback)` or `bus.publish(Event("file_modified", path))`.
+        - **EVENT BUS API**:
+          * `from seaam.kernel.bus import bus, Event`
+          * `bus.subscribe(event_type: str, callback: Callable[[Event], None])`
+          * `bus.publish(Event(event_type: str, data: Any))`
+          * **Note**: There is NO `EventListener` class. Use a standard function or method as a callback.
         - **EVERY MODULE MUST HAVE A GLOBAL `start()` FUNCTION.** This is how the kernel launches it.
-        - If you have an Observer and a Speaker but no sound, you probably need a "Reflex" or "Behavior" module to wire them together.
+        
+        SOMA ATLAS (Internal Package Paths):
+        - All evolved code lives in the `soma` package.
+        - Perception: `soma.perception.observer`
+        - Memory: `soma.memory.journal`
+        - Dashboard: `soma.interface.dashboard`
+        - Behavior: `soma.behavior.reflex`
+        
+        - **INTERNAL IMPORTS MUST USE FULLY QUALIFIED PREFIX**: 
+          * CORRECT: `from soma.perception.observer import Observer`
+          * INCORRECT: `from seaam.observer import Observer` or `from observer import Observer`
         
         If a component is missing OR NEEDS FIXING, return a JSON object (and ONLY JSON) with:
         {{
             "module_name": "soma.behavior.reflex",
-            "description": "Detailed description of the python module. It should import seaam.kernel.bus, soma.voice.speaker, etc..."
+            "description": "Detailed description of the python module. It should import seaam.kernel.bus, soma.perception.observer, etc..."
         }}
-        
-        Note:
-        - For Perception/Observer, use 'soma.perception.observer'.
-        - For Memory/Journal, use 'soma.memory.journal'.
-        - For Dashboard, use 'soma.interface.dashboard'.
         """
         
         response = self.gateway.think(prompt) 

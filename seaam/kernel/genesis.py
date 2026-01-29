@@ -166,26 +166,64 @@ class Genesis:
         """
         # CHECK INTERNAL: Is this a missing ORGAN or external TISSUE?
         # We assume any package starting with 'seaam' or 'soma' is an internal organ.
-        if package_name.startswith("seaam") or package_name.startswith("soma"):
+        is_internal = package_name.startswith("seaam") or package_name.startswith("soma")
+        
+        # HEURISTIC: Even if it doesn't start with soma/seaam, it might be an internal sub-package
+        # example: 'perception.observer' (if LLM forgot the soma prefix)
+        if not is_internal:
+            # Check if this name exists as a directory in soma/
+            soma_path = os.path.join(self.root_dir, "soma")
+            if os.path.exists(soma_path):
+                # Check for first part of package name as directory in soma/
+                root_pkg = package_name.split('.')[0]
+                if root_pkg == "seaam": # NEVER over-heal the SEED
+                    is_internal = True
+                elif os.path.isdir(os.path.join(soma_path, root_pkg)):
+                    is_internal = True
+                    print(f"[IMMUNITY] Identified {package_name} as internal tissue (missing prefix).")
+        
+        # DOUBLE CHECK: If it's something in seaam/, it is SEED.
+        # We must NOT try to grow something that is already hardcoded.
+        if package_name.startswith("seaam."):
+            # Does the file exist on disk?
+            parts = package_name.split('.')
+            seed_path = os.path.join(self.root_dir, *parts)
+            # Check for directory or .py file
+            if os.path.exists(seed_path) or os.path.exists(seed_path + ".py"):
+                print(f"[IMMUNITY] {package_name} is a SEED component. Immersion failed due to internal API mismatch.")
+                # Report failure to Architect instead of healing
+                self._report_failure(package_name, f"Internal API mismatch: {package_name} is part of the SEED. Check your class/function names.")
+                return
+
+        if is_internal:
             print(f"[IMMUNITY] Detected missing internal tissue: {package_name}")
             
             # Check if we already know about this need
-            if package_name not in self.dna.get("blueprint", {}):
+            # If it's a sub-part (e.g. perception.observer), find parent organ in blueprint
+            found_in_blueprint = False
+            for bp_name in self.dna.get("blueprint", {}):
+                if bp_name == package_name or bp_name.endswith("." + package_name):
+                    found_in_blueprint = True
+                    break
+
+            if not found_in_blueprint:
                 print(f"[IMMUNITY] Injecting new blueprint for: {package_name}")
                 
                 # Add to blueprint with a prompt-friendly description
                 if "blueprint" not in self.dna:
                     self.dna["blueprint"] = {}
-                    
-                self.dna["blueprint"][package_name] = (
+                
+                # Use soma. prefix for the new blueprint entry
+                full_name = package_name if package_name.startswith("soma.") else f"soma.{package_name}"
+                self.dna["blueprint"][full_name] = (
                     "Critical system component required by other organs. "
                     "This organ was discovered as a missing dependency. "
                     "Please implement it with a global start() function."
                 )
                 
                 # Ensure it's not marked as active (so Genesis picks it up)
-                if package_name in self.dna.get("active_modules", []):
-                    self.dna["active_modules"].remove(package_name)
+                if full_name in self.dna.get("active_modules", []):
+                    self.dna["active_modules"].remove(full_name)
                 
                 self._save_dna()
                 print("[IMMUNITY] Blueprint updated. REBOOTING SYSTEM for Genesis to take over...")
@@ -197,11 +235,13 @@ class Genesis:
             else:
                 # It is in blueprint, but we still got an ImportError?
                 # This usually means the module exists but doesn't have the specific attribute (e.g. class)
-                # OR the file is corrupted/empty.
+                # OR the file is corrupted/empty/missing prefix.
                 print(f"[IMMUNITY] Internal organ {package_name} exists in blueprint but caused ImportError.")
                 print(f"[IMMUNITY] Marking as FAILED so Architect can fix it.")
                 
-                self._report_failure(package_name, "ImportError detected despite existence in blueprint. Regenerate.")
+                # Try to report failure for the fully qualified name
+                full_name = next((n for n in self.dna["blueprint"] if n == package_name or n.endswith("." + package_name)), package_name)
+                self._report_failure(full_name, f"ImportError detected: No module named '{package_name}'. Likely missing 'soma.' prefix in internal imports.")
                 return
 
         # EXTERNAL: Use pip
@@ -259,13 +299,21 @@ class Genesis:
         parts = organ_name.split('.')
         # parts = ['soma', 'perception', 'observer']
         
-        # Ensure directories exist
-        module_dir = os.path.join(self.root_dir, *parts[:-1])
-        os.makedirs(module_dir, exist_ok=True)
+        # Ensure directories exist and are valid packages
+        current_path = self.root_dir
+        for i in range(len(parts) - 1):
+            current_path = os.path.join(current_path, parts[i])
+            if not os.path.exists(current_path):
+                os.makedirs(current_path, exist_ok=True)
+                # Every new directory in soma must be a package
+                init_file = os.path.join(current_path, "__init__.py")
+                if not os.path.exists(init_file):
+                    with open(init_file, 'w') as f:
+                        f.write("# Soma package part\n")
         
         # File name
         file_name = parts[-1] + ".py"
-        file_path = os.path.join(module_dir, file_name)
+        file_path = os.path.join(current_path, file_name)
         
         # Write
         with open(file_path, 'w') as f:
