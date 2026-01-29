@@ -1,10 +1,12 @@
 {
   "system_version": "0.0.1",
   "system_name": "SEAAM-TabulaRasa",
-  "blueprint": {},
+  "blueprint": {
+    "soma.review.architect": "This module is responsible for reviewing any microservice architecture and providing feedback on how to improve it. It will subscribe to an event that contains the architecture details, analyze them, and then publish feedback events with suggestions for improvements."
+  },
   "goals": [
-    "I should be the best microservice architect in the world.",
-    "I Should be able to review any microservice architecture and provide feedback on how to improve it."
+    "I Should be able to review any microservice architecture and provide feedback on how to improve it, using Ollama and proper promting .",
+    "Optional: A new high-level goal to add to the system's DNA (only if evolving purpose)."
   ],
   "active_modules": [],
   "failures": []

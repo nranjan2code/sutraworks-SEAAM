@@ -77,12 +77,16 @@ class Architect:
             - CORRECT: `from seaam.kernel.bus import bus`
             - INCORRECT: `import soma.seaam.kernel.bus`
         
+        - **SYSTEM COMPLETENESS**: A module that "reviews" is useless if nothing "perceives" the input. Ensure the system has a complete data pipeline (Input -> Processing -> Action/Feedback).
+        - **NO CODE IN JSON**: Do NOT include raw python code or backticks inside the JSON description field. Use high-level architectural descriptions only.
         - **NO PLACEHOLDERS**: Every module must be FULLY IMPLEMENTED. No `pass`, no `TODO`.
+        
+        If you believe the current architecture is SUFFICIENT for all goals, return a JSON with `module_name: "COMPLETE"`.
         
         If a component is missing OR NEEDS FIXING, or if you are proposing a NEW GOAL, return a JSON object (and ONLY JSON) with:
         {{
             "module_name": "soma.your_category.your_organ",
-            "description": "DETAILED description of the python module logic. Demands functional code without mocks. Describe exactly how it should interact with the Event Bus.",
+            "description": "DETAILED description of the python module logic. NO CODE. Describe exactly how it should interact with the Event Bus.",
             "new_goal": "Optional: A new high-level goal to add to the system's DNA (only if evolving purpose)."
         }}
         """
@@ -102,10 +106,11 @@ class Architect:
             if start_idx != -1 and end_idx != -1:
                 json_str = response[start_idx:end_idx+1]
             else:
-                # If no JSON found
-                print(f"[ARCHITECT] No JSON found in response.")
-                if response:
-                    print(f"[ARCHITECT] Raw response snippet: {response[:100]}...")
+                # If it's the string "COMPLETE" or similar
+                if "COMPLETE" in response.upper():
+                    print("[ARCHITECT] Content with current form.")
+                else:
+                    print(f"[ARCHITECT] Unstructured thought: {response[:50]}...")
                 return
 
             plan = json.loads(json_str) 
@@ -114,6 +119,10 @@ class Architect:
             desc = plan.get("description")
             new_goal = plan.get("new_goal")
             
+            if module_name == "COMPLETE":
+                print("[ARCHITECT] Purpose fulfilled for now.")
+                return
+
             # 0. GOAL EVOLUTION:
             if new_goal and new_goal not in self.dna["goals"]:
                 print(f"[ARCHITECT] Purpose Evolved: {new_goal}")
@@ -136,9 +145,7 @@ class Architect:
                     self.dna["blueprint"][module_name] = desc
                     self.save_dna() 
                 else:
-                    # If it's already there and not failing, we might be looping.
-                    # This happens if the Architect isn't creative enough.
-                    pass
+                    print(f"[ARCHITECT] {module_name} is already operational.")
                     
         except json.JSONDecodeError as e:
             print(f"[ARCHITECT] Failed to structure thought: {e}")

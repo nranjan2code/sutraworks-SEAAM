@@ -3,11 +3,11 @@ from typing import Callable, List, Dict, Any
 
 class Event:
     def __init__(self, event_type: str, data: Any = None):
-        self.type = event_type
+        self.event_type = event_type
         self.data = data
 
     def __repr__(self):
-        return f"<Event type={self.type} data={self.data}>"
+        return f"<Event type={self.event_type} data={self.data}>"
 
 class EventBus:
     """
@@ -34,9 +34,9 @@ class EventBus:
 
     def publish(self, event: Event):
         """Fire a signal across the nervous system."""
-        if event.type in self.subscribers:
-            print(f"[NERVOUS SYSTEM] Firing signal: {event.type} -> {len(self.subscribers[event.type])} listeners")
-            for callback in self.subscribers[event.type]:
+        if event.event_type in self.subscribers:
+            print(f"[NERVOUS SYSTEM] Firing signal: {event.event_type} -> {len(self.subscribers[event.event_type])} listeners")
+            for callback in self.subscribers[event.event_type]:
                 try:
                     callback(event)
                 except Exception as e:
