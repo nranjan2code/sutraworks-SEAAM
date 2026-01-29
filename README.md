@@ -39,6 +39,10 @@ It reasons about its goals, designs its own architecture, generates the necessar
 
 The system is composed of three biological layers:
 
+1.  **KERNEL (The Seed)**: Immutable core. Handles the event bus (`Nervous System`) and the `Genesis` lifecycle.
+2.  **CORTEX (The Mind)**: The `Architect` which reflects on `dna.json` and plans the system's evolution.
+3.  **SOMA (The Body)**: Evolved modules (Perception, Memory, Interface) that are written by the Cortex into the `soma/` directory and hot-loaded by the Kernel.
+
 ### 🛡️ Autonomous Self-Correction
 SEAAM is designed to survive failures in its own evolution. The `Immunity` system (part of the Genesis kernel) and the `Architect` work together to:
 - **Detect Missing Internal Tissues**: If an organ import fails because a dependency is missing, the system automatically injects the missing dependency into the DNA and reboots to grow it.

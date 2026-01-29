@@ -64,9 +64,9 @@ The "Voice of God".
 ## 3. The Soma (The Body)
 These are **not present** at start. They are written by the system itself.
 Common evolved organs include:
-- `seaam.perception.observer`: Watches the filesystem.
-- `seaam.memory.journal`: Logs events to a database or file.
-- `seaam.interface.dashboard`: A Streamlit or Terminal UI.
+- `soma.perception.observer`: Watches the filesystem.
+- `soma.memory.journal`: Logs events to a database or file.
+- `soma.interface.dashboard`: A Streamlit or Terminal UI.
 
 ## 4. The Nervous System (Synaptic Bus)
 The `seaam.kernel.bus` is the connective tissue. Organs do not call each other directly; they communicate via events:

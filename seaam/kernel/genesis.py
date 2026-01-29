@@ -165,8 +165,8 @@ class Genesis:
         Installs missing dependencies and REBOOTS the system.
         """
         # CHECK INTERNAL: Is this a missing ORGAN or external TISSUE?
-        # We assume any package starting with 'seaam' is an internal organ.
-        if package_name.startswith("seaam"):
+        # We assume any package starting with 'seaam' or 'soma' is an internal organ.
+        if package_name.startswith("seaam") or package_name.startswith("soma"):
             print(f"[IMMUNITY] Detected missing internal tissue: {package_name}")
             
             # Check if we already know about this need
@@ -253,11 +253,11 @@ class Genesis:
     def _materialize(self, organ_name, code):
         """
         Writes the code to the file system.
-        organ_name example: 'seaam.perception.observer'
+        organ_name example: 'soma.perception.observer'
         """
         # Convert dot notation to path
         parts = organ_name.split('.')
-        # parts = ['seaam', 'perception', 'observer']
+        # parts = ['soma', 'perception', 'observer']
         
         # Ensure directories exist
         module_dir = os.path.join(self.root_dir, *parts[:-1])

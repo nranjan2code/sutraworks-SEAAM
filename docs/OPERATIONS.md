@@ -40,7 +40,7 @@ If you want to watch the system rebuild itself from scratch, perform a **hard re
 # 1. Stop the running process (Ctrl+C)
 
 # 2. Delete the Body (Evolved Organs)
-rm -rf seaam/perception seaam/memory seaam/interface seaam/behavior
+rm -rf soma/
 
 # 3. Wipe the Mind (DNA) - KEEP THE FILE, CLEAR THE CONTENT
 echo '{ "system_version": "0.0.1", "system_name": "SEAAM-TabulaRasa", "blueprint": {}, "goals": ["I must be able to perceive the file system.", "I must have a memory.", "I must have a visual dashboard."], "active_modules": [], "failures": [] }' > dna.json

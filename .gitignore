@@ -11,13 +11,9 @@ venv/
 # MacOS
 .DS_Store
 
-# SEAAM Runtime Generation (Optional - keep these if you want to commit the evolved state, ignore if you want clean slate)
-# For this repo, we will IGNORE the generated code so users start fresh.
-seaam/perception/
-seaam/memory/
-seaam/interface/
-seaam/voice/
-seaam/behavior/
+# SEAAM Runtime Generation (Soma)
+# Evolved code is kept in the soma/ directory and ignored from version control.
+soma/
 events.log
 memory_journal.json
 

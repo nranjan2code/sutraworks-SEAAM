@@ -73,14 +73,14 @@ class Architect:
         
         If a component is missing OR NEEDS FIXING, return a JSON object (and ONLY JSON) with:
         {{
-            "module_name": "seaam.behavior.reflex",
-            "description": "Detailed description of the python module. It should import seaam.kernel.bus, seaam.voice.speaker, etc..."
+            "module_name": "soma.behavior.reflex",
+            "description": "Detailed description of the python module. It should import seaam.kernel.bus, soma.voice.speaker, etc..."
         }}
         
         Note:
-        - For Perception/Observer, use 'seaam.perception.observer'.
-        - For Memory/Journal, use 'seaam.memory.journal'.
-        - For Dashboard, use 'seaam.interface.dashboard'.
+        - For Perception/Observer, use 'soma.perception.observer'.
+        - For Memory/Journal, use 'soma.memory.journal'.
+        - For Dashboard, use 'soma.interface.dashboard'.
         """
         
         response = self.gateway.think(prompt) 

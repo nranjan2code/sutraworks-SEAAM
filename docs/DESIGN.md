@@ -31,17 +31,17 @@ The DNA is the single source of truth for the organism. It persists across reboo
   "system_version": "0.0.1",
   "system_name": "SEAAM-TabulaRasa",
   "blueprint": {
-    "seaam.perception.observer": "Description of the module..."
+    "soma.perception.observer": "Description of the module..."
   },
   "goals": [
     "I must exist.",
     "I must grow."
   ],
   "active_modules": [
-    "seaam.perception.observer"
+    "soma.perception.observer"
   ],
   "failures": [
-    "seaam.perception.observer: Module crashed due to missing library 'watchdog'"
+    "soma.perception.observer: Module crashed due to missing library 'watchdog'"
   ]
 }
 ```
