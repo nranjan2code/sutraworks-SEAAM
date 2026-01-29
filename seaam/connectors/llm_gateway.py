@@ -1,180 +1,261 @@
+"""
+SEAAM LLM Gateway
+
+Abstraction layer for LLM providers (Ollama, Gemini).
+
+Features:
+- Provider abstraction
+- Retry logic with validation
+- Code cleaning
+- Rate limiting ready
+"""
+
 import os
+import re
+import time
 import requests
 import json
+from typing import Any, Optional, Union, List
+
+from seaam.core.logging import get_logger
+from seaam.core.config import config
+from seaam.core.exceptions import (
+    GatewayError,
+    ProviderUnavailableError,
+    InvalidResponseError,
+)
+from seaam.cortex.prompt_loader import prompt_loader
+
+logger = get_logger("gateway")
+
 
 class ProviderGateway:
     """
-    The Voice of the System. 
-    Connects to an LLM provider (Ollama or Gemini) to generate code based on blueprints.
+    The Voice of the System.
+    
+    Connects to LLM providers to generate code and thoughts.
     """
+    
     def __init__(self):
+        # Provider config
+        self.provider = config.llm.provider
+        self.model = config.llm.model
+        self.temperature = config.llm.temperature
+        self.max_retries = config.llm.max_retries
+        self.timeout = config.llm.timeout_seconds
+        
+        # Ollama config
+        self.ollama_url = config.llm.ollama_url
+        
+        # Gemini config
         self.gemini_key = os.environ.get("GEMINI_API_KEY")
-        self.ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/generate")
-        self.ollama_model = os.environ.get("OLLAMA_MODEL", "qwen2.5-coder:14b") # Great for coding tasks
-
-    def generate_code(self, module_name, description):
+        self.gemini_model = config.llm.gemini_model
+        
+        logger.info(f"Gateway initialized: provider={self.provider}, model={self.model}")
+    
+    def think(self, prompt: str) -> Optional[str]:
         """
-        Asks the LLM to write a Python module based on the description.
-        Prioritizes Ollama if available, otherwise falls back to Gemini.
+        Generate a thought (non-code response).
+        
+        Used for Architect reflection.
         """
-        # Try Ollama first (User Preference)
-        code = self._generate_ollama(module_name, description)
-        if code:
-            return code
-
+        return self._generate(prompt, validate_code=False, temperature=0.5)
+    
+    def generate_code(self, module_name: str, description: str) -> Optional[str]:
+        """
+        Generate Python code for an organ.
+        
+        Uses structured prompt template and validates output.
+        """
+        # Build prompt from template
+        try:
+            prompt = prompt_loader.render(
+                "agent_factory",
+                module_name=module_name,
+                description=description,
+            )
+        except FileNotFoundError:
+            prompt = self._build_fallback_code_prompt(module_name, description)
+        
+        # Generate with validation and retries
+        return self._generate_with_validation(
+            prompt=prompt,
+            module_name=module_name,
+            max_retries=self.max_retries,
+        )
+    
+    def _generate(
+        self,
+        prompt: str,
+        validate_code: bool = False,
+        temperature: Optional[float] = None,
+    ) -> Optional[str]:
+        """
+        Core generation method.
+        
+        Tries Ollama first, falls back to Gemini.
+        """
+        temp = temperature if temperature is not None else self.temperature
+        
+        # Try Ollama
+        if self.provider == "ollama" or not self.gemini_key:
+            result = self._call_ollama(prompt, temp)
+            if result:
+                return result
+        
         # Fallback to Gemini
         if self.gemini_key:
-            return self._generate_gemini(module_name, description)
+            return self._call_gemini(prompt)
+        
+        logger.error("No LLM provider available")
+        return None
+    
+    def _generate_with_validation(
+        self,
+        prompt: str,
+        module_name: str,
+        max_retries: int = 3,
+    ) -> Optional[str]:
+        """
+        Generate code with validation and retry logic.
+        
+        Validates that the code contains a start() function.
+        """
+        current_prompt = prompt
+        
+        for attempt in range(max_retries):
+            logger.info(f"Generating code for {module_name} [Attempt {attempt + 1}/{max_retries}]")
             
-        print("CRITICAL: No active LLM provider found. Ensure Ollama is running or GEMINI_API_KEY is set.")
+            response = self._generate(current_prompt, validate_code=True)
+            
+            if not response:
+                logger.warning(f"No response on attempt {attempt + 1}")
+                continue
+            
+            # Clean the code
+            code = self._clean_code(response)
+            
+            # Validate start() function
+            if not self._validate_start_function(code):
+                logger.warning(f"Validation FAILED: Missing 'def start():'")
+                
+                # Add error feedback to prompt
+                try:
+                    feedback = prompt_loader.render(
+                        "error_feedback",
+                        error_message="The code you wrote is MISSING the global 'def start():' function.",
+                        additional_instruction="You MUST include 'def start():' at the end of the file.",
+                    )
+                except FileNotFoundError:
+                    feedback = "\n\nCRITICAL ERROR: Missing 'def start():' function. Add it at the end of the file."
+                
+                current_prompt = prompt + feedback
+                continue
+            
+            logger.info(f"✓ Generated valid code for {module_name}")
+            return code
+        
+        logger.error(f"Failed to generate valid code after {max_retries} attempts")
         return None
-
-    def think(self, prompt):
+    
+    def _validate_start_function(self, code: str) -> bool:
+        """Check if code contains a valid start() function."""
+        # Match: def start(): or def start(anything):
+        pattern = r'def\s+start\s*\([^)]*\)\s*:'
+        return bool(re.search(pattern, code))
+    
+    def _clean_code(self, text: str) -> str:
         """
-        Used for non-code generation (e.g. Architect thoughts).
-        Bypasses code cleaning and validation.
+        Clean LLM output to extract pure Python code.
+        
+        Removes markdown code blocks and extra text.
         """
+        # Remove markdown code blocks
+        if "```" in text:
+            lines = []
+            in_block = False
+            for line in text.split("\n"):
+                stripped = line.strip()
+                if stripped.startswith("```"):
+                    in_block = not in_block
+                    continue
+                if in_block or (not in_block and not stripped.startswith("```")):
+                    # Only add lines that are inside a code block
+                    # or if there are no code blocks
+                    if in_block:
+                        lines.append(line)
+            
+            if lines:
+                text = "\n".join(lines)
+        
+        return text.strip()
+    
+    def _call_ollama(self, prompt: str, temperature: float) -> Optional[str]:
+        """Call Ollama API."""
         data = {
-            "model": self.ollama_model,
+            "model": self.model,
             "prompt": prompt,
             "stream": False,
-            "options": {"temperature": 0.5} # More creative reflection
+            "options": {"temperature": temperature},
         }
         
         try:
-            print(f"[GATEWAY] Contacting Ollama ({self.ollama_model}) [THOUGHT]...")
-            response = requests.post(self.ollama_url, json=data)
+            logger.debug(f"Calling Ollama ({self.model})...")
+            response = requests.post(
+                self.ollama_url,
+                json=data,
+                timeout=self.timeout,
+            )
             response.raise_for_status()
             result = response.json()
-            return result['response']
-        except Exception as e:
-            print(f"[GATEWAY] Ollama unreachable: {e}")
+            return result.get("response")
+            
+        except requests.exceptions.ConnectionError:
+            logger.warning("Ollama not reachable - is it running?")
             return None
-    def _generate_ollama(self, module_name, description):
-        prompt = self._construct_prompt(module_name, description)
+        except requests.exceptions.Timeout:
+            logger.warning(f"Ollama timeout ({self.timeout}s)")
+            return None
+        except Exception as e:
+            logger.error(f"Ollama error: {e}")
+            return None
+    
+    def _call_gemini(self, prompt: str) -> Optional[str]:
+        """Call Gemini API."""
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.gemini_model}:generateContent?key={self.gemini_key}"
         
         data = {
-            "model": self.ollama_model,
-            "prompt": prompt,
-            "stream": False,
-            "options": {
-                "temperature": 0.1 # Precise code generation
-            }
-        }
-        
-        # RETRY LOOP: Enforce viability
-        max_retries = 3
-        current_try = 0
-        
-        while current_try < max_retries:
-            try:
-                print(f"[GATEWAY] Contacting Ollama ({self.ollama_model}) [Attempt {current_try+1}/{max_retries}]...")
-                response = requests.post(self.ollama_url, json=data)
-                response.raise_for_status()
-                result = response.json()
-                code = self._clean_code(result['response'])
-                
-                # VALIDATION: Must have start() (Only for actual organs)
-                # Flexible check: def start(): or def start(anything):
-                import re
-                if module_name != "ARCHITECT_THOUGHT":
-                    if not re.search(r'def\s+start\s*\(.*\)\s*:', code):
-                         print(f"[GATEWAY] Validation FAILED for {module_name}: Missing 'def start():'. Retrying...")
-                         current_try += 1
-                         # Feed the error back to the LLM
-                         data["prompt"] += "\n\nCRITICAL ERROR: The code you wrote is MISSING the global 'def start():' function. You MUST include 'def start():' at the end of the file. Rewrite the code now."
-                         continue
-                
-                return code                
-            except Exception as e:
-                print(f"[GATEWAY] Ollama unreachable: {e}")
-                return None
-        
-        print("[GATEWAY] Failed to generate viable organ after retries.")
-        return None
-
-    def _generate_gemini(self, module_name, description):
-        # TODO: Implement similar retry logic for Gemini
-        prompt = self._construct_prompt(module_name, description)
-        model = "gemini-1.5-flash"
-        
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.gemini_key}"
-        headers = {'Content-Type': 'application/json'}
-        data = {
-            "contents": [{
-                "parts": [{"text": prompt}]
-            }]
+            "contents": [{"parts": [{"text": prompt}]}]
         }
         
         try:
-            print(f"[GATEWAY] Contacting Gemini ({model})...")
-            response = requests.post(url, headers=headers, data=json.dumps(data))
+            logger.debug(f"Calling Gemini ({self.gemini_model})...")
+            response = requests.post(
+                url,
+                headers={"Content-Type": "application/json"},
+                json=data,
+                timeout=self.timeout,
+            )
             response.raise_for_status()
             result = response.json()
-            text = result['candidates'][0]['content']['parts'][0]['text']
-            return self._clean_code(text)
+            
+            # Extract text from nested structure
+            return result["candidates"][0]["content"]["parts"][0]["text"]
+            
         except Exception as e:
-            print(f"[GATEWAY] Gemini failed: {e}")
+            logger.error(f"Gemini error: {e}")
             return None
-
-    def _construct_prompt(self, module_name, description):
+    
+    def _build_fallback_code_prompt(self, module_name: str, description: str) -> str:
+        """Fallback prompt if template not found."""
         return f"""
-        You are the 'Agent Factory' for a recursive self-improving system.
+        Write a complete Python module for: '{module_name}'
+        Description: {description}
         
-        TASK: Write a complete, working Python module for: '{module_name}'.
-        DESCRIPTION: {description}
-        
-        KERNEL CONTRACT:
-        - Nervous System: `seaam.kernel.bus`
-        - **EVENT BUS API**:
-          * `from seaam.kernel.bus import bus, Event`
-          * `bus.subscribe(event_type: str, callback: Callable[[Event], None])`
-          * `bus.publish(Event(event_type: str, data: Any))`
-        
-        - Purpose: Implement the organ logic under the provided `{module_name}` path.
-        
-        DECOUPLING RULES:
-        1. **NO DIRECT IMPORTS BETWEEN SOMA ORGANS**. Use the Event Bus.
-        2. **FORBIDDEN**: `import soma.memory.journal` inside `soma.perception.observer`.
-        3. **CORRECT**: Publish/Subscribe via `seaam.kernel.bus`.
-        4. **NO HALLUCINATIONS**: Do not use `import event_bus`. Always use `from seaam.kernel.bus import bus`.
-        
-        REQUIREMENTS:
-        1. Return ONLY the raw Python code. No markdown formatting, no backticks, no explanatory text.
-        2. Steps: Imports -> Class Definition -> Methods.
-        3. The code must be production-ready, error-free, and FULLY FUNCTIONAL.
-        4. **CRITICAL: NO PLACEHOLDERS, NO MOCKS, NO TODOs.** Do not use `pass` in methods. Implement the actual logic described.
-        5. **CRITICAL**: You MUST define a global `def start():` function at the end of the file. This is the entry point.
-        
-        EXAMPLE FORMAT:
-        from seaam.kernel.bus import bus, Event
-        
-        class MyOrgan:
-            def __init__(self):
-                bus.subscribe('some.event', self.on_event)
-                
-            def on_event(self, event):
-                print(f"Received: {{event.data}}")
-                
-        # REQUIRED ENTRY POINT
-        def start():
-            organ = MyOrgan()
-            # Loop or wait if needed
+        Requirements:
+        1. Use `from seaam.kernel.bus import bus, Event` for events
+        2. Include a global `def start():` function at the end
+        3. Return ONLY Python code, no markdown
         
         CODE:
         """
-
-    def _clean_code(self, text):
-        # Remove markdown code blocks
-        if "```" in text:
-            lines = text.splitlines()
-            cleaned_lines = []
-            in_block = False
-            for line in lines:
-                if line.strip().startswith("```"):
-                    in_block = not in_block
-                    continue
-                cleaned_lines.append(line)
-            text = "\n".join(cleaned_lines)
-        
-        return text.strip()

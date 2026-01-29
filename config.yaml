@@ -1,0 +1,38 @@
+# SEAAM Configuration
+# This file configures the self-evolving system
+
+version: "1.0.0"
+environment: development
+
+llm:
+  provider: ollama
+  model: qwen2.5-coder:14b
+  temperature: 0.1
+  max_retries: 3
+  timeout_seconds: 120
+  ollama_url: http://localhost:11434/api/generate
+  gemini_model: gemini-1.5-flash
+
+paths:
+  dna: ./dna.json
+  soma: ./soma
+
+metabolism:
+  cycle_interval_seconds: 30
+  max_organs_per_cycle: 3
+
+security:
+  # IMPORTANT: Disabled by default for security
+  # Set to true only if you trust the LLM output
+  allow_pip_install: false
+  allowed_pip_packages:
+    - watchdog
+    - streamlit
+    - flask
+    - fastapi
+    - requests
+
+logging:
+  level: DEBUG
+  format: colored  # 'colored' for dev, 'json' for production
+  # file: ./logs/seaam.log  # Uncomment to enable file logging

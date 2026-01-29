@@ -1,0 +1,16 @@
+version: 1
+name: error_feedback
+description: Prompt suffix for providing error feedback to LLM
+
+template: |
+  
+  CRITICAL ERROR IN PREVIOUS GENERATION:
+  {{ error_message }}
+  
+  {{ additional_instruction }}
+  
+  Please rewrite the code now, ensuring this error is fixed.
+
+variables:
+  - error_message
+  - additional_instruction

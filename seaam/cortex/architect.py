@@ -1,153 +1,255 @@
+"""
+SEAAM Architect - The Mind
+
+The intelligent agent responsible for system design.
+Uses externalized prompt templates for flexibility.
+
+Responsibilities:
+- Reflect on DNA state (goals, failures, blueprint)
+- Design new organs
+- Propose goal evolution
+"""
+
 import json
-import os
-from seaam.connectors.llm_gateway import ProviderGateway
+from typing import Callable, Optional
+
+from seaam.core.logging import get_logger
+from seaam.core.config import config
+from seaam.dna.schema import DNA, Goal
+from seaam.cortex.prompt_loader import prompt_loader
+
+logger = get_logger("architect")
+
 
 class Architect:
     """
-    The Mind.
-    It decides WHAT the system should be.
+    The Mind of SEAAM.
+    
+    Analyzes the current system state and designs the next evolution step.
     """
-    def __init__(self, dna, save_callback):
+    
+    def __init__(
+        self,
+        dna: DNA,
+        gateway,  # ProviderGateway - avoid circular import
+        save_callback: Callable[[], None],
+    ):
+        """
+        Args:
+            dna: The DNA instance to reflect on
+            gateway: LLM gateway for thinking
+            save_callback: Function to call when DNA is modified
+        """
         self.dna = dna
+        self.gateway = gateway
         self.save_dna = save_callback
-        self.gateway = ProviderGateway()
-        
-        # Initial goals (If DNA is empty, the system waits for purpose)
-        if "goals" not in self.dna:
-            self.dna["goals"] = []
-            self.save_dna()
-            
-        self.goals = self.dna["goals"]
-
-    def reflect(self):
+    
+    def reflect(self) -> bool:
         """
-        Analyzes the current DNA against Goal.
+        Reflect on the current state and propose evolution.
+        
+        Returns:
+            True if a new blueprint was added/modified
         """
-        active_modules = self.dna.get("active_modules", [])
-        blueprint = self.dna.get("blueprint", {})
-        failures = self.dna.get("failures", [])
+        # Check if we should reflect
+        if not self._should_reflect():
+            return False
         
-        # PRIORITIZE FIXING FAILURES:
-        # If we have failures, we MUST reflect to fix them, even if the body is busy.
-        # Otherwise, we might get stuck in a loop of generating the same broken code.
-        if not failures:
-            # Quick heuristic: If we have pending blueprints (not yet active), wait for Genesis to build them.
-            # This prevents the Architect from panicking while the Body is still growing.
-            if len(blueprint) > len(active_modules):
-                print("[ARCHITECT] Waiting for Body to catch up with Blueprint...")
-                return
-        else:
-            print(f"[ARCHITECT] Critical failures detected ({len(failures)}). Intervening...")
-
-        print("[ARCHITECT] Reflecting on existence...")
+        logger.info("Reflecting on existence...")
         
-        prompt = f"""
-        You are the 'Architect' of a self-evolving AI system.
+        # Build prompt using template
+        try:
+            prompt = self._build_reflect_prompt()
+        except FileNotFoundError:
+            # Fallback to inline prompt if template not found
+            logger.warning("Prompt template not found, using inline fallback")
+            prompt = self._build_fallback_prompt()
         
-        GOALS:
-        {json.dumps(self.goals, indent=2)}
-        
-        CURRENT DNA BLUEPRINT:
-        {json.dumps(blueprint, indent=2)}
-        
-        PREVIOUS FAILURES (LEARN FROM THIS):
-        {json.dumps(failures, indent=2)}
-        
-        TASK:
-        1. ANALYZE PREVIOUS FAILURES. If an organ is failing, your #1 priority is to REDEFINE its blueprint with a fix.
-        2. EVALUATE ALL GOALS vs BLUEPRINT. Compare the existing organs against ALL system goals.
-        3. PROPOSE NEXT GROWTH: Identify the single most important component that is MISSING to satisfy the remaining goals. Be proactive!
-        4. EVOLVE PURPOSE: If current goals are largely satisfied, you MUST propose a NEW high-level goal to expand the system's intelligence, autonomy, or utility.
-        
-        CRITICAL KERNEL CONTRACT: 
-        - The system HAS a nervous system: `seaam.kernel.bus`. 
-        - **EVENT BUS API**:
-          * `from seaam.kernel.bus import bus, Event`
-          * `bus.subscribe(event_type: str, callback: Callable[[Event], None])`
-          * `bus.publish(Event(event_type: str, data: Any))`
-        - **EVERY MODULE MUST HAVE A GLOBAL `start()` FUNCTION.**
-        
-        - Purpose: Define your own organ names and paths under the `soma.` package.
-        
-        - **DECOUPLING & IMPORTS**:
-          * **NO DIRECT IMPORTS BETWEEN SOMA ORGANS**. Use the Event Bus to communicate.
-          * **FORBIDDEN**: `import soma.memory.journal` inside `soma.perception.observer`.
-          * **CORRECT**: Publish an event from `observer` and subscribe in `journal`.
-          * **NO REDUNDANT PREFIXES**: 
-            - CORRECT: `from seaam.kernel.bus import bus`
-            - INCORRECT: `import soma.seaam.kernel.bus`
-        
-        - **SYSTEM COMPLETENESS**: A module that "reviews" is useless if nothing "perceives" the input. Ensure the system has a complete data pipeline (Input -> Processing -> Action/Feedback).
-        - **NO CODE IN JSON**: Do NOT include raw python code or backticks inside the JSON description field. Use high-level architectural descriptions only.
-        - **NO PLACEHOLDERS**: Every module must be FULLY IMPLEMENTED. No `pass`, no `TODO`.
-        
-        If you believe the current architecture is SUFFICIENT for all goals, return a JSON with `module_name: "COMPLETE"`.
-        
-        If a component is missing OR NEEDS FIXING, or if you are proposing a NEW GOAL, return a JSON object (and ONLY JSON) with:
-        {{
-            "module_name": "soma.your_category.your_organ",
-            "description": "DETAILED description of the python module logic. NO CODE. Describe exactly how it should interact with the Event Bus.",
-            "new_goal": "Optional: A new high-level goal to add to the system's DNA (only if evolving purpose)."
-        }}
-        """
-        
-        response = self.gateway.think(prompt) 
+        # Ask the gateway
+        response = self.gateway.think(prompt)
         
         if not response:
-            print("[ARCHITECT] No response from Overmind.")
-            return
-
+            logger.warning("No response from Overmind")
+            return False
+        
+        # Parse and apply the response
+        return self._process_response(response)
+    
+    def _should_reflect(self) -> bool:
+        """
+        Determine if reflection is needed.
+        
+        Prioritizes fixing failures over waiting for body to catch up.
+        """
+        failures = self.dna.failures
+        blueprint = self.dna.blueprint
+        active = self.dna.active_modules
+        
+        # Always reflect if there are failures
+        if failures:
+            logger.info(f"Critical failures detected ({len(failures)}). Intervening...")
+            return True
+        
+        # If we have pending blueprints, wait for Genesis to build them
+        pending = len(blueprint) - len(active)
+        if pending > 0:
+            logger.debug(f"Waiting for Body to catch up ({pending} pending)...")
+            return False
+        
+        return True
+    
+    def _build_reflect_prompt(self) -> str:
+        """Build the reflection prompt from template."""
+        # Prepare data for template
+        goals = [g.description for g in self.dna.goals if not g.satisfied]
+        
+        blueprint = {
+            name: bp.description
+            for name, bp in self.dna.blueprint.items()
+        }
+        
+        failures = [
+            f"{f.module_name}: {f.error_message} (attempts: {f.attempt_count})"
+            for f in self.dna.failures
+        ]
+        
+        return prompt_loader.render(
+            "architect_reflect",
+            goals=goals,
+            blueprint=blueprint,
+            failures=failures,
+        )
+    
+    def _build_fallback_prompt(self) -> str:
+        """Fallback inline prompt if template loading fails."""
+        goals = [g.description for g in self.dna.goals if not g.satisfied]
+        blueprint = {name: bp.description for name, bp in self.dna.blueprint.items()}
+        failures = [f"{f.module_name}: {f.error_message}" for f in self.dna.failures]
+        
+        return f"""
+        You are the 'Architect' of a self-evolving AI system.
+        
+        GOALS: {json.dumps(goals, indent=2)}
+        BLUEPRINT: {json.dumps(blueprint, indent=2)}
+        FAILURES: {json.dumps(failures, indent=2)}
+        
+        Analyze the goals vs blueprint. Propose the next organ as JSON:
+        {{"module_name": "soma.category.name", "description": "..."}}
+        
+        Or return {{"module_name": "COMPLETE"}} if satisfied.
+        """
+    
+    def _process_response(self, response: str) -> bool:
+        """
+        Parse and apply the Architect's response.
+        
+        Returns:
+            True if DNA was modified
+        """
         try:
-            # Gateway now cleans code, so we can try to parse directly
-            # But sometimes LLMs are chatty, so we try to find the first '{'
-            start_idx = response.find('{')
-            end_idx = response.rfind('}')
+            # Extract JSON from response
+            json_data = self._extract_json(response)
             
-            if start_idx != -1 and end_idx != -1:
-                json_str = response[start_idx:end_idx+1]
-            else:
-                # If it's the string "COMPLETE" or similar
+            if not json_data:
                 if "COMPLETE" in response.upper():
-                    print("[ARCHITECT] Content with current form.")
+                    logger.info("Content with current form")
                 else:
-                    print(f"[ARCHITECT] Unstructured thought: {response[:50]}...")
-                return
-
-            plan = json.loads(json_str) 
+                    logger.warning(f"Unstructured thought: {response[:100]}...")
+                return False
             
-            module_name = plan.get("module_name")
-            desc = plan.get("description")
-            new_goal = plan.get("new_goal")
+            # Parse the plan
+            module_name = json_data.get("module_name")
+            description = json_data.get("description")
+            new_goal = json_data.get("new_goal")
             
+            # Check for completion
             if module_name == "COMPLETE":
-                print("[ARCHITECT] Purpose fulfilled for now.")
-                return
-
-            # 0. GOAL EVOLUTION:
-            if new_goal and new_goal not in self.dna["goals"]:
-                print(f"[ARCHITECT] Purpose Evolved: {new_goal}")
-                self.dna["goals"].append(new_goal)
-                self.save_dna()
-
-            if module_name and desc:
-                # EVOLUTION LOGIC:
-                # 1. New Organ: if not in blueprint
-                # 2. Iteration: if in blueprint BUT in failures (Refinement)
+                logger.info("Purpose fulfilled for now")
+                return False
+            
+            modified = False
+            
+            # Handle goal evolution
+            if new_goal:
+                existing_goals = [g.description for g in self.dna.goals]
+                if new_goal not in existing_goals:
+                    logger.info(f"Purpose Evolved: {new_goal}")
+                    self.dna.goals.append(Goal(description=new_goal))
+                    modified = True
+            
+            # Handle blueprint
+            if module_name and description:
+                # Check if this is a new organ or a fix for failing one
+                is_failing = any(
+                    module_name in f.module_name
+                    for f in self.dna.failures
+                )
                 
-                is_failing = any(module_name in f for f in failures)
-                
-                if module_name not in blueprint:
-                    print(f"[ARCHITECT] Decided to evolve: {module_name}")
-                    self.dna["blueprint"][module_name] = desc
-                    self.save_dna()
+                if module_name not in self.dna.blueprint:
+                    logger.info(f"Decided to evolve: {module_name}")
+                    self.dna.add_blueprint(module_name, description)
+                    modified = True
                 elif is_failing:
-                    print(f"[ARCHITECT] Refining blueprint for failing organ: {module_name}")
-                    self.dna["blueprint"][module_name] = desc
-                    self.save_dna() 
+                    logger.info(f"Refining blueprint for failing organ: {module_name}")
+                    self.dna.add_blueprint(module_name, description)
+                    modified = True
                 else:
-                    print(f"[ARCHITECT] {module_name} is already operational.")
-                    
-        except json.JSONDecodeError as e:
-            print(f"[ARCHITECT] Failed to structure thought: {e}")
-            print(f"[ARCHITECT] Raw Response: {response}")
-            pass
+                    logger.debug(f"{module_name} is already operational")
+            
+            if modified:
+                self.save_dna()
+            
+            return modified
+            
+        except Exception as e:
+            logger.error(f"Failed to process response: {e}")
+            logger.debug(f"Raw response: {response[:200]}...")
+            return False
+    
+    def _extract_json(self, text: str) -> Optional[dict]:
+        """
+        Extract JSON object from text response.
+        
+        Handles LLMs that include extra text around JSON.
+        """
+        # Find JSON object
+        start_idx = text.find("{")
+        end_idx = text.rfind("}")
+        
+        if start_idx == -1 or end_idx == -1:
+            return None
+        
+        json_str = text[start_idx:end_idx + 1]
+        
+        try:
+            return json.loads(json_str)
+        except json.JSONDecodeError:
+            # Try to clean up common issues
+            cleaned = self._clean_json_string(json_str)
+            try:
+                return json.loads(cleaned)
+            except json.JSONDecodeError:
+                return None
+    
+    def _clean_json_string(self, text: str) -> str:
+        """
+        Clean common JSON issues from LLM output.
+        """
+        # Remove markdown code fences if present
+        if "```" in text:
+            lines = []
+            in_fence = False
+            for line in text.split("\n"):
+                if line.strip().startswith("```"):
+                    in_fence = not in_fence
+                    continue
+                if not in_fence:
+                    lines.append(line)
+            text = "\n".join(lines)
+        
+        # Remove trailing commas (common LLM error)
+        import re
+        text = re.sub(r",\s*}", "}", text)
+        text = re.sub(r",\s*]", "]", text)
+        
+        return text

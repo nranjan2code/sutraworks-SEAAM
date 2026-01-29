@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seaam"
+version = "1.0.0"
+description = "Self-Evolving Autonomous Agent Mesh - The code that writes itself"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+keywords = ["ai", "llm", "self-evolving", "autonomous", "agent"]
+authors = [
+    {name = "SutraWorks", email = "hello@sutraworks.ai"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "requests>=2.28.0",
+]
+
+[project.optional-dependencies]
+full = [
+    "pyyaml>=6.0",
+    "watchdog>=3.0",
+    "streamlit>=1.20",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+seaam = "main:main"
+
+[project.urls]
+Homepage = "https://github.com/sutraworks/seaam"
+Documentation = "https://github.com/sutraworks/seaam#readme"
+Repository = "https://github.com/sutraworks/seaam.git"
+Issues = "https://github.com/sutraworks/seaam/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["seaam*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["seaam"]
+omit = ["tests/*", "soma/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]  # Line too long - handled by black
