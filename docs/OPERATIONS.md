@@ -1,66 +1,68 @@
-# SEAAM Operations Guide
+# ⚙️ Operations Manual
 
-## Prerequisites
+How to operate, configure, and maintain the SEAAM system.
 
-*   **Python 3.9+**
-*   **Ollama**: Installed and running (`ollama serve`).
-*   **Model**: `qwen2.5-coder:14b` (Recommended).
-    ```bash
-    ollama pull qwen2.5-coder:14b
-    ```
+## 🚀 Running the System
 
-## Environment Variables
+### 1. Requirements 📋
+Ensure you have the following installed:
+*   [Python 3.9+](https://www.python.org/getit/)
+*   [Ollama](https://ollama.ai/) (Mac/Linux)
 
-| Variable | Description | Default |
-| :--- | :--- | :--- |
-| `OLLAMA_URL` | URL of the Ollama API | `http://localhost:11434/api/generate` |
-| `OLLAMA_MODEL` | Model to use for code/reasoning | `qwen2.5-coder:14b` |
-| `GEMINI_API_KEY`| (Optional) Fallback cloud provider | `None` |
-
-## Running the System
-
-To start the Genesis Loop:
-
+### 2. Environment Setup 🛠️
 ```bash
+# Clone the repository
+git clone https://github.com/sutraworks/seaam.git
+cd seaam /Users/nisheethranjan/Projects/sutraworks-SEAAM
+
+# Install dependencies (Minimal)
+pip install -r requirements.txt
+```
+
+### 3. Ignition 🔥
+```bash
+# Start Ollama (in a separate terminal)
+ollama run qwen2.5-coder:14b
+
+# Start SEAAM
 python3 main.py
 ```
 
-## What to Expect
+---
 
-1.  **Awakening**: You will see logs indicating the system is starting.
-2.  **Reflection**: The Architect will pause to "think".
-3.  **Generation**: Files will be created in `seaam/` in real-time.
-4.  **Self-Healing**: You may see the system **restart** abruptly. This is normal; it likely installed a dependency (like `streamlit` or `watchdog`).
-5.  **Dashboard**: Once evolved, a web dashboard will be available (usually `http://localhost:8501` for Streamlit or `:5000` for Flask).
+## 🛑 Resetting the System (The "Robinson Crusoe" Protocol)
 
-## Resetting (The "Robinson Crusoe" Scenario)
+If you want to watch the system rebuild itself from scratch, perform a **hard reset**.
 
-To verify the system's ability to rebuild from scratch:
+> ⚠️ **WARNING**: This will delete all evolved code and memory!
 
 ```bash
-# 1. Kill the loop
-pkill -f main.py
+# 1. Stop the running process (Ctrl+C)
 
-# 2. Upload "Tabula Rasa" DNA (Goals only, no blueprints/active modules)
-echo '{
-  "system_version": "0.0.1",
-  "system_name": "SEAAM-TabulaRasa",
-  "blueprint": {},
-  "goals": [
-    "I must be able to perceive the file system to understand the user's project.",
-    "I must have a memory of past events to learn from mistakes.",
-    "I must have a visual dashboard to communicate my state to the user."
-  ],
-  "active_modules": [],
-  "failures": []
-}' > dna.json
+# 2. Delete the Body (Evolved Organs)
+rm -rf seaam/perception seaam/memory seaam/interface seaam/behavior
 
-# 3. Wipe the Body (delete generated modules)
-rm -rf seaam/perception seaam/memory seaam/interface seaam/voice seaam/behavior
+# 3. Wipe the Mind (DNA) - KEEP THE FILE, CLEAR THE CONTENT
+echo '{ "system_version": "0.0.1", "active_modules": [], "failures": [] }' > dna.json
 
-# 4. Sabotage Environment (Optional)
-# pip uninstall streamlit watchdog pyttsx3 espeak-ng
-
-# 5. Run the Second Genesis
-python3 main.py
+# 4. Uninstall Tools (Optional, to text immunity)
+pip uninstall watchdog streamlit
 ```
+
+When you restart `python3 main.py`, the system will detect the damage and begin repairs immediately.
+
+---
+
+## 🕵️ Troubleshooting
+
+### `[ARCHITECT] Failed to structure thought`
+*   **Cause**: The LLM is outputting bad JSON or conversational text.
+*   **Fix**: Ensure `seaam/connectors/llm_gateway.py` has the markdown cleaning fix (v0.0.2+).
+
+### `[GATEWAY] Ollama unreachable`
+*   **Cause**: Ollama service is not running.
+*   **Fix**: Run `ollama serve` or open the Ollama app.
+
+### `ImportError: No module named 'xyz'`
+*   **Cause**: The system generated code requiring a library that isn't installed.
+*   **Fix**: The `Genesis._heal()` system should catch this automatically. If not, manually run `pip install xyz`.

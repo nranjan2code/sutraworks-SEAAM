@@ -1,69 +1,67 @@
-# SEAAM Architecture
+# 🧬 System Architecture
 
-The **Self-Evolving Autonomous Agent Mesh (SEAAM)** is a recursive, bio-mimetic software substrate designed to achieve operational autonomy through continuous self-improvement.
+SEAAM is fundamentally different from traditional software architectures. Instead of a static codebase, it is a dynamic biological system designed to grow and heal.
 
-## The Layered Topology
+## 🗺 High-Level Map
 
-The system is organized into concentric layers of responsibility, mimicking a biological organism.
+```mermaid
+graph TD
+    User((User)) -->|Queries| Interface[Interface Organ]
+    Interface -->|Events| Bus[Nervous System]
+    Bus -->|Events| Cortex[Cortex / Memory]
+    
+    subgraph KERNEL [The Immutable Soul]
+        Genesis[Genesis Cycle]
+        Bus
+    end
+    
+    subgraph CORTEX [The Mind]
+        Architect[Architect] -->|Reflects| DNA[(DNA.json)]
+        Architect -->|Designs| Blueprints
+    end
+    
+    subgraph SOMA [The Body]
+        Perception
+        Memory
+        Interface
+    end
+    
+    Genesis -->|Reads| DNA
+    Genesis -->|Builds| SOMA
+    Blueprints -.->|Guide| Genesis
+```
 
-### Level 0: The Immutable Kernel (Substrate)
-**Location**: `seaam/kernel/`
-*   **Role**: The "Brain Stem". It is the only part of the system that is manually written and immutable (mostly).
-*   **Protocols**:
-    *   **Genesis**: The logic for bootstrapping the system from a DNA blueprint.
-    *   **Assimilation**: The ability to dynamically load, instantiate, and execute Python modules generated at runtime.
-    *   **Immunity**: The self-healing mechanism that detects `ImportError`, installs missing dependencies (via `pip`), and restarts the process.
-    *   **The Bus**: A global Event Bus (Nervous System) allowing decoupled modules to act and react to stimuli.
+## 1. The Kernel (Immutable)
+The Kernel is the only "hard-coded" part of the system. It enables life but does not dictate form.
 
-### Level 1: The Cognition Mesh (Cortex)
-**Location**: `seaam/cortex/`
-*   **Role**: The "Mind".
-*   **Component**: `Architect`
-*   **Function**: Recursively analyzes the system's state against high-level goals. It does not write code; it writes **Blueprints**. It modifies the `dna.json` to reflect what the system *needs* to become.
-*   **Learning**: It reads runtime failures from the DNA to correct faulty blueprints in the next cycle.
+### `seaam.kernel.genesis`
+The "Will to Live". This is the main loop.
+- **Awakening**: Loads DNA, initializes the Architect.
+- **Evolution**: Asks Architect for blueprints, uses Gateway to generate code.
+- **Assimilation**: Hot-loads the new Python modules (`active_modules`).
+- **Immunity**: If a module crashes due to missing libraries, Genesis installs them via `pip` and reboots.
 
-### Level 2: The Sensory Peripheral (Perception)
-**Location**: `seaam/perception/` (Generated)
-*   **Role**: The "Senses".
-*   **Function**: Observes the environment and publishes events to the **Bus**.
-*   **Standard Module**: `Observer` (FileSystemWatcher) - Allows the system to react to file changes.
+### `seaam.connectors.llm_gateway`
+The "Voice of God".
+- Abstracts the connection to the LLM (Ollama or Gemini).
+- Cleans and sanitizes the code returned by the LLM (e.g., stripping markdown).
 
-### Level 3: The Evolutionary Registry (Memory)
-**Location**: `seaam/memory/` (Generated)
-*   **Role**: The "Memory".
-*   **Function**: Persists state.
-*   **Standard Module**: `Journal` - Logs events to `events.log`.
+## 2. The Cortex (The Mind)
+### `seaam.cortex.architect`
+ The intelligent agent responsible for system design.
+- **Reflect**: Looks at `failures` and `goals` in `dna.json`.
+- **Design**: Generates a JSON implementation plan (Thought) for the next necessary module.
+- **Example Thought**:
+  ```json
+  {
+    "module_name": "seaam.perception.file_watcher",
+    "description": "A module that uses watchdog to monitor..."
+  }
+  ```
 
-### Level 4: The Interface (Skin)
-**Location**: `seaam/interface/` (Generated)
-*   **Role**: The "Face".
-*   **Standard Module**: `Dashboard` - A web interface (Flask/Streamlit) to visualize the internal state (`dna.json`, logs).
-
-### Level 5: The Action Layer (Behaviors)
-**Location**: `seaam/behavior/` (Generated)
-*   **Role**: The "Reflexes".
-*   **Function**: Subscribes to the **Bus** and triggers actions (Voice, API calls, etc.).
-
----
-
-## The Protocols
-
-### 1. The Genesis Loop (Autopoiesis)
-1.  **Awakening**: The Kernel starts.
-2.  **Reflection**: The `Architect` consults the LLM to identify gaps between "Goals" and "Current DNA". It also reviews **Failures** to fix broken code.
-3.  **Mutation**: The `Architect` adds a new module requirement or updates an existing blueprint in `dna.json`.
-4.  **Materialization**: The `Genesis` engine detects the new requirement, asks the LLM for implementation, and writes the code to disk.
-5.  **Assimilation**: The Kernel imports the new module and spins it up.
-
-### 2. The Immunity Protocol
-1.  **Detection**: The Kernel detects an `ImportError` during Assimilation.
-2.  **Identification**: It parses the error to find the missing package name.
-3.  **Intervention**: It runs `pip install <package>`.
-4.  **Reincarnation**: It executes `os.execv` to restart the entire process, reloading the environment.
-
-### 3. The Evolutionary Feedback Loop
-1.  **Failure**: A generated module crashes or fails a contract (e.g., missing `start()` function).
-2.  **Reporting**: `Genesis` catches the error and writes it to the `failures` list in `dna.json`.
-3.  **Learning**: On the next cycle, the `Architect` reads the failure.
-4.  **Correction**: The `Architect` refines the blueprint with specific fix instructions.
-5.  **Regeneration**: `Genesis` rebuilds the module.
+## 3. The Soma (The Body)
+These are **not present** at start. They are written by the system itself.
+Common evolved organs include:
+- `seaam.perception.observer`: Watches the filesystem.
+- `seaam.memory.journal`: Logs events to a database or file.
+- `seaam.interface.dashboard`: A Streamlit or Terminal UI.

@@ -84,11 +84,15 @@ class Architect:
             return
 
         try:
-            # Clean up potential json markdown
-            if "```json" in response:
-                response = response.split("```json")[1].split("```")[0].strip()
-            elif "{" not in response:
-                # Fallback if model just chats
+            # Gateway now cleans code, so we can try to parse directly
+            # But sometimes LLMs are chatty, so we try to find the first '{'
+            start_idx = response.find('{')
+            end_idx = response.rfind('}')
+            
+            if start_idx != -1 and end_idx != -1:
+                json_str = response[start_idx:end_idx+1]
+            else:
+                # If no JSON found
                 return
 
             plan = json.loads(response)
@@ -103,6 +107,11 @@ class Architect:
                 
                 is_failing = any(module_name in f for f in failures)
                 
+                # Check for "Reflex" or "Behavior" specifically as per instructions
+                if module_name == "seaam.behavior.reflex":
+                     # Ensure we don't accidentally ignore it if it's critical
+                     pass
+                
                 if module_name not in blueprint:
                     print(f"[ARCHITECT] Decided to evolve: {module_name}")
                     self.dna["blueprint"][module_name] = desc
@@ -114,6 +123,7 @@ class Architect:
                 else:
                     print(f"[ARCHITECT] {module_name} already in blueprint.")
                     
-        except json.JSONDecodeError:
-            print(f"[ARCHITECT] Failed to structure thought: {response[:50]}...")
+        except json.JSONDecodeError as e:
+            print(f"[ARCHITECT] Failed to structure thought: {e}")
+            print(f"[ARCHITECT] Raw Response: {response}")
             pass

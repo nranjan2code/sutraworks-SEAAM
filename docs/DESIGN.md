@@ -1,58 +1,55 @@
-# SEAAM System Design
+# 📐 SEAAM Design Specification
 
-## The System DNA (`dna.json`)
+## The Genesis Loop (OODA)
 
-The heart of SEAAM is its "Genetic Code". This file is the single source of truth for what the system *believes* it is.
+The core driver of SEAAM is the Genesis Loop. It is an implementation of the OODA loop (Observe-Orient-Decide-Act) applied to software engineering.
+
+```mermaid
+sequenceDiagram
+    participant Architect as 🧠 Cortex
+    participant DNA as 🧬 DNA
+    participant Genesis as ⚡ Kernel
+    participant Gateway as ☁️ Gateway
+    participant FileSys as 📂 FileSystem
+
+    loop Genesis Cycle
+        Architect->>DNA: 1. Reflect (Read Goals & Failures)
+        Architect->>DNA: 2. Decide (Update Blueprint)
+        DNA->>Genesis: 3. Audit (Check active vs blueprint)
+        Genesis->>Gateway: 4. Request Code (Organ Name + Desc)
+        Gateway->>FileSys: 5. Materialize (Write .py file)
+        Genesis->>DNA: 6. Update DNA (Add to active_modules)
+    end
+```
+
+## DNA Structure (`dna.json`)
+The DNA is the single source of truth for the organism. It persists across reboots.
 
 ```json
 {
   "system_version": "0.0.1",
-  "system_name": "SEAAM-Genesis",
+  "system_name": "SEAAM-TabulaRasa",
   "blueprint": {
-    "seaam.perception.observer": "Description of the module logic...",
-    "seaam.interface.dashboard": "Description of the dashboard..."
+    "seaam.perception.observer": "Description of the module..."
   },
+  "goals": [
+    "I must exist.",
+    "I must grow."
+  ],
   "active_modules": [
     "seaam.perception.observer"
+  ],
+  "failures": [
+    "seaam.perception.observer: Module crashed due to missing library 'watchdog'"
   ]
 }
 ```
 
+## Assimilation Protocol
+When an organ is "Grown" (code written to disk), it is not yet "Alive". Assimilation is the process of integrating it into the running runtime.
 
-*   **Blueprint**: A dictionary of `"module.path": "Description"`. The Architect writes to this.
-*   **Active Modules**: A list of modules that have been successfully built and likely assimilated.
-*   **Failures**: A registry of runtime errors (e.g., "Missing start()"). Used by the Architect to self-correct.
-
-## The Architect (Decision Engine)
-
-The Architect does not know *how* to code. It only knows *what* is needed.
-It uses a recursive prompt loop:
-1.  **Review**: Checks `failures` list. If valid, prioritized fixing them.
-2.  **Reflect**: "My goal is [X]. My blueprint has [Y]. What is missing?"
-3.  **Decide**: "I need [Z]."
-4.  **Update**: Writes [Z] to `dna.json`.
-
-This separation of concerns (Architect = Design, Genesis = Build) allows the system to be extremely flexible.
-
-## The Nervous System (Connectivity)
-
-To avoid "Organs in a Jar" (isolated code), SEAAM uses a global Event Bus.
-*   **Observer**: Publishes events (e.g., `file_modified`).
-*   **Cortex/Reflex**: Subscribes to events.
-*   **Effectors**: Act on events.
-
-This allows the system to exhibit complex, coordinated behaviors without tight coupling.
-
-## The Connector (LLM Gateway)
-
-The `ProviderGateway` abstracts the AI model.
-*   **Default**: Ollama (`qwen2.5-coder:14b`) - Optimized for local, private, gratuitous code generation.
-*   **Fallback**: Google Gemini (`gemini-1.5-flash`) - For high-reasoning tasks if enabled.
-
-## Self-Healing Design
-
-The system assumes code generation is imperfect and dependencies are unknown.
-*   **Import Traps**: Usage of `try/except ImportError` blocks around dynamic imports.
-*   **subprocess pip**: Direct usage of pip to satisfy requirements at runtime.
-*   **Feedback Loops**: Runtime failures (AttributeError, etc.) are caught and fed back to the design phase.
-*   **Process Replacement**: Using `os.execv` ensures a clean state without memory leaks or stale modules.
+1.  **Import**: Dynamic `importlib.import_module()`.
+2.  **Activation**:
+    *   Kernel looks for a global `start()` function.
+    *   Kernel spawns a `threading.Thread(target=module.start)`.
+3.  **Validation**: If `start()` crashes, the exception is caught, logged to `failures` in DNA, and the Architect is notified to "Refine" the blueprint in the next cycle.

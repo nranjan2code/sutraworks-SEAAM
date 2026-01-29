@@ -1,7 +1,9 @@
 {
   "system_version": "0.0.1",
   "system_name": "SEAAM-TabulaRasa",
-  "blueprint": {},
+  "blueprint": {
+    "seaam.behavior.reflex": "This module acts as a reflex to handle events published by other modules. It subscribes to file modification events, updates the memory with the new state of the file system, and communicates changes through the dashboard."
+  },
   "goals": [
     "I must be able to perceive the file system to understand the user's project.",
     "I must have a memory of past events to learn from mistakes.",

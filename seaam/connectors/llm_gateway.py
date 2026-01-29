@@ -90,4 +90,16 @@ class ProviderGateway:
         """
 
     def _clean_code(self, text):
-        return text.replace("```python", "").replace("```", "").strip()
+        # Remove markdown code blocks
+        if "```" in text:
+            lines = text.splitlines()
+            cleaned_lines = []
+            in_block = False
+            for line in lines:
+                if line.strip().startswith("```"):
+                    in_block = not in_block
+                    continue
+                cleaned_lines.append(line)
+            text = "\n".join(cleaned_lines)
+        
+        return text.strip()
