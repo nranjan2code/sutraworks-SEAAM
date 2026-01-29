@@ -12,14 +12,9 @@ class Architect:
         self.save_dna = save_callback
         self.gateway = ProviderGateway()
         
-        # Load goals from DNA (Cognitive Persistence)
-        # If no goals exist, seed them with defaults
+        # Initial goals (If DNA is empty, the system waits for purpose)
         if "goals" not in self.dna:
-            self.dna["goals"] = [
-                "I must be able to perceive the file system to understand the user's project.",
-                "I must have a memory of past events to learn from mistakes.",
-                "I must have a visual dashboard to communicate my state to the user."
-            ]
+            self.dna["goals"] = []
             self.save_dna()
             
         self.goals = self.dna["goals"]
@@ -62,6 +57,7 @@ class Architect:
         1. ANALYZE PREVIOUS FAILURES. If an organ is failing, your #1 priority is to REDEFINE its blueprint with a fix.
         2. EVALUATE ALL GOALS vs BLUEPRINT. Compare the existing organs against ALL system goals.
         3. PROPOSE NEXT GROWTH: Identify the single most important component that is MISSING to satisfy the remaining goals. Be proactive!
+        4. EVOLVE PURPOSE: If current goals are largely satisfied, you MUST propose a NEW high-level goal to expand the system's intelligence, autonomy, or utility.
         
         CRITICAL KERNEL CONTRACT: 
         - The system HAS a nervous system: `seaam.kernel.bus`. 
@@ -71,11 +67,7 @@ class Architect:
           * `bus.publish(Event(event_type: str, data: Any))`
         - **EVERY MODULE MUST HAVE A GLOBAL `start()` FUNCTION.**
         
-        SOMA ATLAS (Internal Package Paths):
-        - Perception: `soma.perception.observer`
-        - Memory: `soma.memory.journal` (Class name must be `Journal`)
-        - Dashboard: `soma.interface.dashboard`
-        - Behavior: `soma.behavior.reflex`
+        - Purpose: Define your own organ names and paths under the `soma.` package.
         
         - **DECOUPLING & IMPORTS**:
           * **NO DIRECT IMPORTS BETWEEN SOMA ORGANS**. Use the Event Bus to communicate.
@@ -85,17 +77,20 @@ class Architect:
             - CORRECT: `from seaam.kernel.bus import bus`
             - INCORRECT: `import soma.seaam.kernel.bus`
         
-        If a component is missing OR NEEDS FIXING, return a JSON object (and ONLY JSON) with:
+        - **NO PLACEHOLDERS**: Every module must be FULLY IMPLEMENTED. No `pass`, no `TODO`.
+        
+        If a component is missing OR NEEDS FIXING, or if you are proposing a NEW GOAL, return a JSON object (and ONLY JSON) with:
         {{
-            "module_name": "soma.behavior.reflex",
-            "description": "Detailed description of the python module. Focus on logic. Remind Genesis not to import other organs directly."
+            "module_name": "soma.your_category.your_organ",
+            "description": "DETAILED description of the python module logic. Demands functional code without mocks. Describe exactly how it should interact with the Event Bus.",
+            "new_goal": "Optional: A new high-level goal to add to the system's DNA (only if evolving purpose)."
         }}
         """
         
         response = self.gateway.think(prompt) 
         
-        if not response or "COMPLETE" in response:
-            print("[ARCHITECT] Content with current form.")
+        if not response:
+            print("[ARCHITECT] No response from Overmind.")
             return
 
         try:
@@ -117,18 +112,20 @@ class Architect:
             
             module_name = plan.get("module_name")
             desc = plan.get("description")
+            new_goal = plan.get("new_goal")
             
+            # 0. GOAL EVOLUTION:
+            if new_goal and new_goal not in self.dna["goals"]:
+                print(f"[ARCHITECT] Purpose Evolved: {new_goal}")
+                self.dna["goals"].append(new_goal)
+                self.save_dna()
+
             if module_name and desc:
                 # EVOLUTION LOGIC:
                 # 1. New Organ: if not in blueprint
                 # 2. Iteration: if in blueprint BUT in failures (Refinement)
                 
                 is_failing = any(module_name in f for f in failures)
-                
-                # Check for "Reflex" or "Behavior" specifically as per instructions
-                if module_name == "seaam.behavior.reflex":
-                     # Ensure we don't accidentally ignore it if it's critical
-                     pass
                 
                 if module_name not in blueprint:
                     print(f"[ARCHITECT] Decided to evolve: {module_name}")
@@ -139,7 +136,9 @@ class Architect:
                     self.dna["blueprint"][module_name] = desc
                     self.save_dna() 
                 else:
-                    print(f"[ARCHITECT] {module_name} already in blueprint.")
+                    # If it's already there and not failing, we might be looping.
+                    # This happens if the Architect isn't creative enough.
+                    pass
                     
         except json.JSONDecodeError as e:
             print(f"[ARCHITECT] Failed to structure thought: {e}")

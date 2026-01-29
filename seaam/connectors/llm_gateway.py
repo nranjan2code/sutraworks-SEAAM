@@ -75,8 +75,10 @@ class ProviderGateway:
                 code = self._clean_code(result['response'])
                 
                 # VALIDATION: Must have start() (Only for actual organs)
+                # Flexible check: def start(): or def start(anything):
+                import re
                 if module_name != "ARCHITECT_THOUGHT":
-                    if "def start():" not in code and "def start(self):" not in code:
+                    if not re.search(r'def\s+start\s*\(.*\)\s*:', code):
                          print(f"[GATEWAY] Validation FAILED for {module_name}: Missing 'def start():'. Retrying...")
                          current_try += 1
                          # Feed the error back to the LLM
@@ -122,23 +124,42 @@ class ProviderGateway:
         TASK: Write a complete, working Python module for: '{module_name}'.
         DESCRIPTION: {description}
         
+        KERNEL CONTRACT:
+        - Nervous System: `seaam.kernel.bus`
+        - **EVENT BUS API**:
+          * `from seaam.kernel.bus import bus, Event`
+          * `bus.subscribe(event_type: str, callback: Callable[[Event], None])`
+          * `bus.publish(Event(event_type: str, data: Any))`
+        
+        - Purpose: Implement the organ logic under the provided `{module_name}` path.
+        
+        DECOUPLING RULES:
+        1. **NO DIRECT IMPORTS BETWEEN SOMA ORGANS**. Use the Event Bus.
+        2. **FORBIDDEN**: `import soma.memory.journal` inside `soma.perception.observer`.
+        3. **CORRECT**: Publish/Subscribe via `seaam.kernel.bus`.
+        4. **NO HALLUCINATIONS**: Do not use `import event_bus`. Always use `from seaam.kernel.bus import bus`.
+        
         REQUIREMENTS:
         1. Return ONLY the raw Python code. No markdown formatting, no backticks, no explanatory text.
         2. Steps: Imports -> Class Definition -> Methods.
-        3. The code must be production-ready and error-free.
-        4. CRITICAL: You MUST define a global 'start()' function at the end of the file. This is the entry point.
+        3. The code must be production-ready, error-free, and FULLY FUNCTIONAL.
+        4. **CRITICAL: NO PLACEHOLDERS, NO MOCKS, NO TODOs.** Do not use `pass` in methods. Implement the actual logic described.
+        5. **CRITICAL**: You MUST define a global `def start():` function at the end of the file. This is the entry point.
         
         EXAMPLE FORMAT:
-        import some_lib
+        from seaam.kernel.bus import bus, Event
         
         class MyOrgan:
-            def do_something(self):
-                pass
+            def __init__(self):
+                bus.subscribe('some.event', self.on_event)
+                
+            def on_event(self, event):
+                print(f"Received: {{event.data}}")
                 
         # REQUIRED ENTRY POINT
         def start():
             organ = MyOrgan()
-            organ.do_something()
+            # Loop or wait if needed
         
         CODE:
         """

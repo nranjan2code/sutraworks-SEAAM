@@ -3,9 +3,8 @@
   "system_name": "SEAAM-TabulaRasa",
   "blueprint": {},
   "goals": [
-    "I must be able to perceive the file system to understand the user's project.",
-    "I must have a memory of past events to learn from mistakes.",
-    "I must have a visual dashboard to communicate my state to the user."
+    "I should be the best microservice architect in the world.",
+    "I Should be able to review any microservice architecture and provide feedback on how to improve it."
   ],
   "active_modules": [],
   "failures": []

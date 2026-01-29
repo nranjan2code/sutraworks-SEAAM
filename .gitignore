@@ -21,3 +21,4 @@ memory_journal.json
 # We explicitly want to preserve the Kernel and Cortex.
 # seaam/kernel/ is tracked.
 # seaam/cortex/ is tracked.
+dna.json

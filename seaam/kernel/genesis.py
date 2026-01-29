@@ -245,6 +245,15 @@ class Genesis:
                 return
 
         # EXTERNAL: Use pip
+        # PROTECT AGAINST HALLUCINATIONS:
+        # If the LLM hallucinated a system component (like 'event_bus' or 'journal'), 
+        # we should NOT install it from pip.
+        system_hallucinations = ["event_bus", "journal", "observer", "reflex", "dashboard", "bus"]
+        if package_name.lower() in system_hallucinations:
+            print(f"[IMMUNITY] Blocked pip install for likely hallucination: {package_name}")
+            self._report_failure(package_name, f"Module tried to import '{package_name}' which is not a valid organ path. Use 'soma.' or 'seaam.' prefixes.")
+            return
+
         print(f"[IMMUNITY] Auto-Installing missing dependency: {package_name}...")
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
@@ -295,6 +304,14 @@ class Genesis:
         Writes the code to the file system.
         organ_name example: 'soma.perception.observer'
         """
+        # KERNEL PROTECTION: Evolved organs MUST live in the 'soma' package.
+        # This prevents the Architect from trying to overwrite the 'seaam' kernel.
+        if not organ_name.startswith("soma."):
+            error_msg = f"ARCHITECTURAL VIOLATION: Organ '{organ_name}' rejected. Evolved code must have 'soma.' prefix."
+            print(f"[GENESIS] {error_msg}")
+            self._report_failure(organ_name, error_msg)
+            return
+
         # Convert dot notation to path
         parts = organ_name.split('.')
         # parts = ['soma', 'perception', 'observer']
