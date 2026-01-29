@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+
+# MacOS
+.DS_Store
+
+# SEAAM Runtime Generation (Optional - keep these if you want to commit the evolved state, ignore if you want clean slate)
+# For this repo, we will IGNORE the generated code so users start fresh.
+seaam/perception/
+seaam/memory/
+seaam/interface/
+seaam/voice/
+seaam/behavior/
+events.log
+memory_journal.json
+
+# Keep empty init files if needed, but the system creates folders.
+# We explicitly want to preserve the Kernel and Cortex.
+# seaam/kernel/ is tracked.
+# seaam/cortex/ is tracked.

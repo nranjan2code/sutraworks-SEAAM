@@ -1,0 +1,202 @@
+import os
+import json
+import time
+import importlib
+import subprocess
+import sys
+from seaam.connectors.llm_gateway import ProviderGateway
+from seaam.cortex.architect import Architect
+
+class Genesis:
+    """
+    The Primal Will.
+    It exists to ensure the System exists.
+    """
+    def __init__(self):
+        self.root_dir = os.getcwd()
+        self.dna_path = os.path.join(self.root_dir, "dna.json")
+        self.gateway = ProviderGateway()
+        self.dna = self._load_dna()
+        self.architect = Architect(self.dna, self._save_dna)
+
+    def _load_dna(self):
+        try:
+            with open(self.dna_path, 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            print("CRITICAL: DNA not found. The organism is dead.")
+            return None
+
+    def _save_dna(self):
+        with open(self.dna_path, 'w') as f:
+            json.dump(self.dna, f, indent=2)
+
+    def awaken(self):
+        print(f"--- SEAAM v{self.dna.get('system_version')} AWAKENING ---")
+        
+        # 1. Self-Audit & Evolution (Architect decides, Genesis builds)
+        while True:
+            # The Architect thinks about what is needed
+            self.architect.reflect()
+            
+            # The Genesis Loop checks if there are pending blueprints to build
+            missing = self._audit()
+            if not missing:
+                break
+            
+            # Build what the Architect designed
+            self._evolve_step(missing)
+
+        # 2. Assimilation (Integration)
+        self._assimilate()
+
+        # 3. Life (The Run Loop)
+        self._live()
+
+    def _live(self):
+        print("[LIFE] Entering metabolic stasis (Ctrl+C to stop)...")
+        # In a real system, we would loop through organs and call .update()
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("[LIFE] Shutting down.")
+
+    def _assimilate(self):
+        """
+        Dynamically imports and activates the grown organs.
+        """
+        active_modules = self.dna.get("active_modules", [])
+        print(f"[ASSIMILATION] Integrating {len(active_modules)} organs...")
+        
+        for module_name in active_modules:
+            try:
+                # seaam.perception.observer -> from seaam.perception.observer import *
+                module = importlib.import_module(module_name)
+                print(f"  - Loaded: {module_name}")
+                
+                # Heuristic: Find a class that matches the module name loosely or just pick the first class?
+                # For this prototype, we rely on the specific blueprints asking for specific hooks.
+                
+                # Special Case: Dashboard
+                if "dashboard" in module_name:
+                    if hasattr(module, "Dashboard"):
+                        viz = module.Dashboard()
+                        # Run in a separate thread so it doesn't block the kernel
+                        import threading
+                        t = threading.Thread(target=viz.start, daemon=True)
+                        t.start()
+                        print(f"  - [STARTED] {module_name} (Thread)")
+                
+                # GENERIC PROTOCOL: If the module has a 'start' function, run it.
+                if hasattr(module, "start"):
+                    t = threading.Thread(target=module.start, daemon=True)
+                    t.start()
+                    print(f"  - [STARTED] {module_name} (Thread)")
+                else:
+                    # FEEDBACK LOOP: Report failure to DNA so Architect can fix it.
+                    error_msg = f"Module {module_name} rejected: Missing global start() function."
+                    print(f"  - [REJECTED] {error_msg}")
+                    
+                    self._report_failure(module_name, error_msg)
+                    
+            except ImportError as e:
+                print(f"  - [CRITICAL] Body rejected organ {module_name} due to missing tissue: {e}")
+                # e.name might be the package name, or we parse str(e) "No module named 'x'"
+                missing_package = str(e).split("'")[-2]
+                self._heal(missing_package)
+                
+            except Exception as e:
+                print(f"  - [REJECTED] {module_name}: {e}")
+                self._report_failure(module_name, str(e))
+
+    def _report_failure(self, module_name, error_reason):
+        """
+        Feeds the error back into the DNA so the Architect can learn.
+        """
+        # 1. Remove from active modules (it's dead)
+        if module_name in self.dna["active_modules"]:
+            self.dna["active_modules"].remove(module_name)
+        
+        # 2. Add to failures list
+        if "failures" not in self.dna:
+            self.dna["failures"] = []
+        
+        # Avoid duplicate failures
+        failure_entry = f"{module_name}: {error_reason}"
+        if failure_entry not in self.dna["failures"]:
+            self.dna["failures"].append(failure_entry)
+            
+        self._save_dna()
+        print(f"[GENESIS] Failure recorded in DNA: {failure_entry}")
+
+    def _heal(self, package_name):
+        """
+        The Immunity System.
+        Installs missing dependencies and REBOOTS the system.
+        """
+        print(f"[IMMUNITY] Auto-Installing missing dependency: {package_name}...")
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
+            print("[IMMUNITY] Installation successful. REBOOTING SYSTEM...")
+            
+            # Restart the process
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+            
+        except Exception as e:
+            print(f"[IMMUNITY] FAILED to install {package_name}: {e}")
+
+    def _evolve_step(self, missing_organs):
+        for organ_name, blueprint_desc in missing_organs.items():
+            print(f"[GENESIS] Missing Organ: {organ_name}")
+            print(f"[GENESIS] Consultling the Overmind for blueprint...")
+            
+            code = self.gateway.generate_code(organ_name, blueprint_desc)
+            
+            if code:
+                self._materialize(organ_name, code)
+                self.dna['active_modules'].append(organ_name)
+                self._save_dna()
+                print(f"[GENESIS] Organ '{organ_name}' GROWN.")
+            else:
+                print(f"[GENESIS] Failed to grow {organ_name}. Retrying in next epoch.")
+        
+        # Reload DNA to reflect changes
+        self.dna = self._load_dna()
+
+    def _audit(self):
+        """
+        Checks what organs are in the blueprint but not in active_modules.
+        """
+        blueprint = self.dna.get("blueprint", {})
+        active = self.dna.get("active_modules", [])
+        
+        missing = {}
+        for organ, desc in blueprint.items():
+            if organ not in active:
+                missing[organ] = desc
+        
+        return missing
+
+    def _materialize(self, organ_name, code):
+        """
+        Writes the code to the file system.
+        organ_name example: 'seaam.perception.observer'
+        """
+        # Convert dot notation to path
+        parts = organ_name.split('.')
+        # parts = ['seaam', 'perception', 'observer']
+        
+        # Ensure directories exist
+        module_dir = os.path.join(self.root_dir, *parts[:-1])
+        os.makedirs(module_dir, exist_ok=True)
+        
+        # File name
+        file_name = parts[-1] + ".py"
+        file_path = os.path.join(module_dir, file_name)
+        
+        # Write
+        with open(file_path, 'w') as f:
+            f.write(code)
+            
+        print(f"[GENESIS] Wrote code to {file_path}")
