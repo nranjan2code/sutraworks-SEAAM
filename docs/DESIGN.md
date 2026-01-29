@@ -12,13 +12,14 @@ sequenceDiagram
     participant Gateway as ☁️ Gateway
     participant FileSys as 📂 FileSystem
 
-    loop Genesis Cycle
-        Architect->>DNA: 1. Reflect (Read Goals & Failures)
-        Architect->>DNA: 2. Decide (Update Blueprint)
-        DNA->>Genesis: 3. Audit (Check active vs blueprint)
-        Genesis->>Gateway: 4. Request Code (Organ Name + Desc)
-        Gateway->>FileSys: 5. Materialize (Write .py file)
+    loop Metabolic Genesis (Continuous)
+        Architect->>DNA: 1. Reflect (Analyze Goals vs Body)
+        Architect->>DNA: 2. Decide (Propose Missing Organ)
+        DNA->>Genesis: 3. Audit (Identify Delta)
+        Genesis->>Gateway: 4. Request Code (With Validation)
+        Gateway->>FileSys: 5. Grow (Standardized .py file)
         Genesis->>DNA: 6. Update DNA (Add to active_modules)
+        Genesis->>Genesis: 7. Assimilate (Hot-load into Process)
     end
 ```
 
@@ -48,8 +49,15 @@ The DNA is the single source of truth for the organism. It persists across reboo
 ## Assimilation Protocol
 When an organ is "Grown" (code written to disk), it is not yet "Alive". Assimilation is the process of integrating it into the running runtime.
 
-1.  **Import**: Dynamic `importlib.import_module()`.
-2.  **Activation**:
-    *   Kernel looks for a global `start()` function.
-    *   Kernel spawns a `threading.Thread(target=module.start)`.
-3.  **Validation**: If `start()` crashes, the exception is caught, logged to `failures` in DNA, and the Architect is notified to "Refine" the blueprint in the next cycle.
+1.  **Deduplication**: Genesis checks the `running_organs` registry to ensure the module isn't already active.
+2.  **Import**: Dynamic `importlib.import_module()`.
+3.  **Activation**:
+    *   **Signature Verification**: Kernel uses `inspect.signature` to check `start()`. 
+    *   If `start()` has zero arguments, it is spawned in a `threading.Thread`.
+    *   If it requires arguments, it is rejected and reported as a `failure` to the Architect.
+4.  **Error Recovery**: If `start()` crashes, the exception is caught, logged to `failures` in DNA, and the Architect is notified to Refine the blueprint.
+
+## Gateway Verification Layer
+To prevent "Dead Organs" (code that can't be assimilated), the `llm_gateway` performs structural checks:
+- **Requirement**: Must have `def start():` or `def start(self):`.
+- **Retry Protocol**: If validation fails, the LLM is re-prompted within the same generation request, providing immediate feedback (Self-Correction).

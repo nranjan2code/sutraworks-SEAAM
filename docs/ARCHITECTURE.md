@@ -39,12 +39,14 @@ The "Will to Live". This is the main loop.
 - **Awakening**: Loads DNA, initializes the Architect.
 - **Evolution**: Asks Architect for blueprints, uses Gateway to generate code.
 - **Assimilation**: Hot-loads the new Python modules (`active_modules`).
-- **Immunity**: If a module crashes due to missing libraries, Genesis installs them via `pip` and reboots.
+- **Metabolic Loop**: Once awake, the system enters a continuous loop where it periodically reconsider its goals, evolves new organs, and hot-loads them *while the system is running*.
+- **Immunity**: If a module crashes due to missing libraries, Genesis installs them via `pip` and reboots. For internal `seaam` dependencies, it adds them to the blueprint.
 
 ### `seaam.connectors.llm_gateway`
 The "Voice of God".
-- Abstracts the connection to the LLM (Ollama or Gemini).
-- Cleans and sanitizes the code returned by the LLM (e.g., stripping markdown).
+- **LLM Abstraction**: Connects to Ollama or Gemini.
+- **Code Validation**: Every generated organ is validated for the mandatory `start()` entry point.
+- **Auto-Retry**: If the LLM generates invalid code, the Gateway rejects it and re-prompts the LLM with the specific error (e.g., "Missing start() function").
 
 ## 2. The Cortex (The Mind)
 ### `seaam.cortex.architect`
@@ -65,3 +67,9 @@ Common evolved organs include:
 - `seaam.perception.observer`: Watches the filesystem.
 - `seaam.memory.journal`: Logs events to a database or file.
 - `seaam.interface.dashboard`: A Streamlit or Terminal UI.
+
+## 4. The Nervous System (Synaptic Bus)
+The `seaam.kernel.bus` is the connective tissue. Organs do not call each other directly; they communicate via events:
+- **`bus.publish(event_name, data)`**: Fires a signal.
+- **`bus.subscribe(event_name, callback)`**: Listens for a signal.
+This decoupling allows the system to add or remove organs (e.g. swap a Voice Speaker for a Dashboard) without breaking the core logic.

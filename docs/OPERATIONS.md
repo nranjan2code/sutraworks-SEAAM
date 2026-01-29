@@ -43,7 +43,7 @@ If you want to watch the system rebuild itself from scratch, perform a **hard re
 rm -rf seaam/perception seaam/memory seaam/interface seaam/behavior
 
 # 3. Wipe the Mind (DNA) - KEEP THE FILE, CLEAR THE CONTENT
-echo '{ "system_version": "0.0.1", "active_modules": [], "failures": [] }' > dna.json
+echo '{ "system_version": "0.0.1", "system_name": "SEAAM-TabulaRasa", "blueprint": {}, "goals": ["I must be able to perceive the file system.", "I must have a memory.", "I must have a visual dashboard."], "active_modules": [], "failures": [] }' > dna.json
 
 # 4. Uninstall Tools (Optional, to text immunity)
 pip uninstall watchdog streamlit
@@ -59,10 +59,10 @@ When you restart `python3 main.py`, the system will detect the damage and begin 
 *   **Cause**: The LLM is outputting bad JSON or conversational text.
 *   **Fix**: Ensure `seaam/connectors/llm_gateway.py` has the markdown cleaning fix (v0.0.2+).
 
-### `[GATEWAY] Ollama unreachable`
-*   **Cause**: Ollama service is not running.
-*   **Fix**: Run `ollama serve` or open the Ollama app.
+### `[GATEWAY] Validation FAILED`
+*   **Cause**: The LLM failed to include a `start()` function in the generated code after 3 retries.
+*   **Fix**: Check `seaam/connectors/llm_gateway.py`. The LLM might be struggling with the prompt. Try switching to a more capable model (e.g., `qwen2.5-coder:14b`) or check the `_construct_prompt` for errors.
 
-### `ImportError: No module named 'xyz'`
-*   **Cause**: The system generated code requiring a library that isn't installed.
-*   **Fix**: The `Genesis._heal()` system should catch this automatically. If not, manually run `pip install xyz`.
+### `[ASSIMILATION] Rejected: Missing global start() function`
+*   **Cause**: The module was imported successfully but does not have the standardized entry point.
+*   **Fix**: This failure is reported to the DNA automatically. The Architect will attempt to redesign the organ in the next metabolic cycle. 
