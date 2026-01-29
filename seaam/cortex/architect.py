@@ -61,35 +61,36 @@ class Architect:
         TASK:
         1. ANALYZE PREVIOUS FAILURES. If an organ is failing, your #1 priority is to REDEFINE its blueprint with a fix.
         2. EVALUATE ALL GOALS vs BLUEPRINT. Compare the existing organs against ALL system goals.
-        3. PROPOSE NEXT GROWTH: Identify the single most important component that is MISSING to satisfy the remaining goals. Be proactive! Don't wait. If we have a reflex but no memory storage, suggest a memory organ. If we have no dashboard, suggest that.
+        3. PROPOSE NEXT GROWTH: Identify the single most important component that is MISSING to satisfy the remaining goals. Be proactive!
         
-        If the system is complete and healthy (all goals fully satisfied), return "COMPLETE".
-
         CRITICAL KERNEL CONTRACT: 
         - The system HAS a nervous system: `seaam.kernel.bus`. 
         - **EVENT BUS API**:
           * `from seaam.kernel.bus import bus, Event`
           * `bus.subscribe(event_type: str, callback: Callable[[Event], None])`
           * `bus.publish(Event(event_type: str, data: Any))`
-          * **Note**: There is NO `EventListener` class. Use a standard function or method as a callback.
-        - **EVERY MODULE MUST HAVE A GLOBAL `start()` FUNCTION.** This is how the kernel launches it.
+        - **EVERY MODULE MUST HAVE A GLOBAL `start()` FUNCTION.**
         
         SOMA ATLAS (Internal Package Paths):
-        - All evolved code lives in the `soma` package.
         - Perception: `soma.perception.observer`
-        - Memory: `soma.memory.journal`
+        - Memory: `soma.memory.journal` (Class name must be `Journal`)
         - Dashboard: `soma.interface.dashboard`
         - Behavior: `soma.behavior.reflex`
         
-        - **INTERNAL IMPORTS MUST USE FULLY QUALIFIED PREFIX**: 
-          * CORRECT: `from soma.perception.observer import Observer`
-          * INCORRECT: `from seaam.observer import Observer` or `from observer import Observer`
+        - **DECOUPLING & IMPORTS**:
+          * **NO DIRECT IMPORTS BETWEEN SOMA ORGANS**. Use the Event Bus to communicate.
+          * **FORBIDDEN**: `import soma.memory.journal` inside `soma.perception.observer`.
+          * **CORRECT**: Publish an event from `observer` and subscribe in `journal`.
+          * **NO REDUNDANT PREFIXES**: 
+            - CORRECT: `from seaam.kernel.bus import bus`
+            - INCORRECT: `import soma.seaam.kernel.bus`
         
         If a component is missing OR NEEDS FIXING, return a JSON object (and ONLY JSON) with:
-        {{
+        {
             "module_name": "soma.behavior.reflex",
-            "description": "Detailed description of the python module. It should import seaam.kernel.bus, soma.perception.observer, etc..."
-        }}
+            "description": "Detailed description of the python module. Focus on logic. Remind Genesis not to import other organs directly."
+        }
+}
         """
         
         response = self.gateway.think(prompt) 
