@@ -4,6 +4,8 @@ import time
 import importlib
 import subprocess
 import sys
+import threading
+import inspect
 from seaam.connectors.llm_gateway import ProviderGateway
 from seaam.cortex.architect import Architect
 
@@ -78,20 +80,19 @@ class Genesis:
                 # Heuristic: Find a class that matches the module name loosely or just pick the first class?
                 # For this prototype, we rely on the specific blueprints asking for specific hooks.
                 
-                # Special Case: Dashboard
-                if "dashboard" in module_name:
-                    if hasattr(module, "Dashboard"):
-                        viz = module.Dashboard()
-                        # Run in a separate thread so it doesn't block the kernel
-                        import threading
-                        t = threading.Thread(target=viz.start, daemon=True)
-                        t.start()
-                        print(f"  - [STARTED] {module_name} (Thread)")
-                
                 # GENERIC PROTOCOL: If the module has a 'start' function, run it.
                 if hasattr(module, "start"):
-                    t = threading.Thread(target=module.start, daemon=True)
-                    t.start()
+                    # Check signature to see if we can call it without args
+                    sig = inspect.signature(module.start)
+                    if len(sig.parameters) == 0:
+                        t = threading.Thread(target=module.start, daemon=True)
+                        t.start()
+                    else:
+                        print(f"  - [WARNING] {module_name}.start() requires arguments: {list(sig.parameters.keys())}. Skipping auto-start.")
+                        # Could report failure, but let's see if we can make it zero-args
+                        self._report_failure(module_name, f"start() requires arguments: {list(sig.parameters.keys())}. Must be zero-args.")
+                        continue
+                    
                     print(f"  - [STARTED] {module_name} (Thread)")
                 else:
                     # FEEDBACK LOOP: Report failure to DNA so Architect can fix it.
@@ -135,6 +136,47 @@ class Genesis:
         The Immunity System.
         Installs missing dependencies and REBOOTS the system.
         """
+        # CHECK INTERNAL: Is this a missing ORGAN or external TISSUE?
+        # We assume any package starting with 'seaam' is an internal organ.
+        if package_name.startswith("seaam"):
+            print(f"[IMMUNITY] Detected missing internal tissue: {package_name}")
+            
+            # Check if we already know about this need
+            if package_name not in self.dna.get("blueprint", {}):
+                print(f"[IMMUNITY] Injecting new blueprint for: {package_name}")
+                
+                # Add to blueprint with a prompt-friendly description
+                if "blueprint" not in self.dna:
+                    self.dna["blueprint"] = {}
+                    
+                self.dna["blueprint"][package_name] = (
+                    "Critical system component required by other organs. "
+                    "This organ was discovered as a missing dependency. "
+                    "Please implement it with a global start() function."
+                )
+                
+                # Ensure it's not marked as active (so Genesis picks it up)
+                if package_name in self.dna.get("active_modules", []):
+                    self.dna["active_modules"].remove(package_name)
+                
+                self._save_dna()
+                print("[IMMUNITY] Blueprint updated. REBOOTING SYSTEM for Genesis to take over...")
+                
+                # Restart
+                os.execv(sys.executable, [sys.executable] + sys.argv)
+                return
+            
+            else:
+                # It is in blueprint, but we still got an ImportError?
+                # This usually means the module exists but doesn't have the specific attribute (e.g. class)
+                # OR the file is corrupted/empty.
+                print(f"[IMMUNITY] Internal organ {package_name} exists in blueprint but caused ImportError.")
+                print(f"[IMMUNITY] Marking as FAILED so Architect can fix it.")
+                
+                self._report_failure(package_name, "ImportError detected despite existence in blueprint. Regenerate.")
+                return
+
+        # EXTERNAL: Use pip
         print(f"[IMMUNITY] Auto-Installing missing dependency: {package_name}...")
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
@@ -156,6 +198,11 @@ class Genesis:
             if code:
                 self._materialize(organ_name, code)
                 self.dna['active_modules'].append(organ_name)
+                
+                # CLEAR FAILURES: We have just evolved a fix. Forget past mistakes for this organ.
+                if "failures" in self.dna:
+                    self.dna["failures"] = [f for f in self.dna["failures"] if not f.startswith(organ_name + ":")]
+                
                 self._save_dna()
                 print(f"[GENESIS] Organ '{organ_name}' GROWN.")
             else:

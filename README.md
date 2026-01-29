@@ -39,9 +39,11 @@ It reasons about its goals, designs its own architecture, generates the necessar
 
 The system is composed of three biological layers:
 
-1.  **KERNEL (The Soul)**: Immutable core. Handles the event bus (`Nervous System`) and the `Genesis` lifecycle.
-2.  **CORTEX (The Mind)**: The `Architect` which reflects on `dna.json` and plans the system's evolution.
-3.  **ORGANS (The Body)**: Evolved modules (Perception, Memory, Interface) that are written by the Cortex and hot-loaded by the Kernel.
+### 🛡️ Autonomous Self-Correction
+SEAAM is designed to survive failures in its own evolution. The `Immunity` system (part of the Genesis kernel) and the `Architect` work together to:
+- **Detect Missing Internal Tissues**: If an organ import fails because a dependency is missing, the system automatically injects the missing dependency into the DNA and reboots to grow it.
+- **Enforce Organ Viability**: The `Agent Factory` validates every generated module for structural integrity (e.g., presence of the global `start()` entry point) and automatically retries generation if the code is invalid.
+- **Learn from Failures**: Compilation or runtime errors are recorded in the DNA as `failures`, allowing the Architect to design refined, correct versions of failing organs.
 
 ### The "Robinson Crusoe" Test 🏝️
 

@@ -29,6 +29,27 @@ class ProviderGateway:
         print("CRITICAL: No active LLM provider found. Ensure Ollama is running or GEMINI_API_KEY is set.")
         return None
 
+    def think(self, prompt):
+        """
+        Used for non-code generation (e.g. Architect thoughts).
+        Bypasses code cleaning and validation.
+        """
+        data = {
+            "model": self.ollama_model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {"temperature": 0.5} # More creative reflection
+        }
+        
+        try:
+            print(f"[GATEWAY] Contacting Ollama ({self.ollama_model}) [THOUGHT]...")
+            response = requests.post(self.ollama_url, json=data)
+            response.raise_for_status()
+            result = response.json()
+            return result['response']
+        except Exception as e:
+            print(f"[GATEWAY] Ollama unreachable: {e}")
+            return None
     def _generate_ollama(self, module_name, description):
         prompt = self._construct_prompt(module_name, description)
         
@@ -41,17 +62,37 @@ class ProviderGateway:
             }
         }
         
-        try:
-            print(f"[GATEWAY] Contacting Ollama ({self.ollama_model})...")
-            response = requests.post(self.ollama_url, json=data)
-            response.raise_for_status()
-            result = response.json()
-            return self._clean_code(result['response'])
-        except Exception as e:
-            print(f"[GATEWAY] Ollama unreachable: {e}")
-            return None
+        # RETRY LOOP: Enforce viability
+        max_retries = 3
+        current_try = 0
+        
+        while current_try < max_retries:
+            try:
+                print(f"[GATEWAY] Contacting Ollama ({self.ollama_model}) [Attempt {current_try+1}/{max_retries}]...")
+                response = requests.post(self.ollama_url, json=data)
+                response.raise_for_status()
+                result = response.json()
+                code = self._clean_code(result['response'])
+                
+                # VALIDATION: Must have start() (Only for actual organs)
+                if module_name != "ARCHITECT_THOUGHT":
+                    if "def start():" not in code and "def start(self):" not in code:
+                         print(f"[GATEWAY] Validation FAILED for {module_name}: Missing 'def start():'. Retrying...")
+                         current_try += 1
+                         # Feed the error back to the LLM
+                         data["prompt"] += "\n\nCRITICAL ERROR: The code you wrote is MISSING the global 'def start():' function. You MUST include 'def start():' at the end of the file. Rewrite the code now."
+                         continue
+                
+                return code                
+            except Exception as e:
+                print(f"[GATEWAY] Ollama unreachable: {e}")
+                return None
+        
+        print("[GATEWAY] Failed to generate viable organ after retries.")
+        return None
 
     def _generate_gemini(self, module_name, description):
+        # TODO: Implement similar retry logic for Gemini
         prompt = self._construct_prompt(module_name, description)
         model = "gemini-1.5-flash"
         
@@ -85,6 +126,19 @@ class ProviderGateway:
         1. Return ONLY the raw Python code. No markdown formatting, no backticks, no explanatory text.
         2. Steps: Imports -> Class Definition -> Methods.
         3. The code must be production-ready and error-free.
+        4. CRITICAL: You MUST define a global 'start()' function at the end of the file. This is the entry point.
+        
+        EXAMPLE FORMAT:
+        import some_lib
+        
+        class MyOrgan:
+            def do_something(self):
+                pass
+                
+        # REQUIRED ENTRY POINT
+        def start():
+            organ = MyOrgan()
+            organ.do_something()
         
         CODE:
         """

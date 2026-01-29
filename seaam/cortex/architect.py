@@ -30,16 +30,21 @@ class Architect:
         """
         active_modules = self.dna.get("active_modules", [])
         blueprint = self.dna.get("blueprint", {})
+        failures = self.dna.get("failures", [])
         
-        # Quick heuristic: If we have pending blueprints (not yet active), wait for Genesis to build them.
-        # This prevents the Architect from panicking while the Body is still growing.
-        if len(blueprint) > len(active_modules):
-            print("[ARCHITECT] Waiting for Body to catch up with Blueprint...")
-            return
+        # PRIORITIZE FIXING FAILURES:
+        # If we have failures, we MUST reflect to fix them, even if the body is busy.
+        # Otherwise, we might get stuck in a loop of generating the same broken code.
+        if not failures:
+            # Quick heuristic: If we have pending blueprints (not yet active), wait for Genesis to build them.
+            # This prevents the Architect from panicking while the Body is still growing.
+            if len(blueprint) > len(active_modules):
+                print("[ARCHITECT] Waiting for Body to catch up with Blueprint...")
+                return
+        else:
+            print(f"[ARCHITECT] Critical failures detected ({len(failures)}). Intervening...")
 
         print("[ARCHITECT] Reflecting on existence...")
-        
-        failures = self.dna.get("failures", [])
         
         prompt = f"""
         You are the 'Architect' of a self-evolving AI system.
@@ -77,7 +82,7 @@ class Architect:
         - For Dashboard, use 'seaam.interface.dashboard'.
         """
         
-        response = self.gateway.generate_code("ARCHITECT_THOUGHT", prompt) # Reusing generate_code for text gen
+        response = self.gateway.think(prompt) 
         
         if not response or "COMPLETE" in response:
             print("[ARCHITECT] Content with current form.")
@@ -93,9 +98,12 @@ class Architect:
                 json_str = response[start_idx:end_idx+1]
             else:
                 # If no JSON found
+                print(f"[ARCHITECT] No JSON found in response.")
+                if response:
+                    print(f"[ARCHITECT] Raw response snippet: {response[:100]}...")
                 return
 
-            plan = json.loads(response)
+            plan = json.loads(json_str) 
             
             module_name = plan.get("module_name")
             desc = plan.get("description")
