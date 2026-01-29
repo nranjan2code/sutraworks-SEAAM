@@ -86,11 +86,10 @@ class Architect:
             - INCORRECT: `import soma.seaam.kernel.bus`
         
         If a component is missing OR NEEDS FIXING, return a JSON object (and ONLY JSON) with:
-        {
+        {{
             "module_name": "soma.behavior.reflex",
             "description": "Detailed description of the python module. Focus on logic. Remind Genesis not to import other organs directly."
-        }
-}
+        }}
         """
         
         response = self.gateway.think(prompt) 
