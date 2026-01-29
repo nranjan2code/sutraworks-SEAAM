@@ -49,7 +49,8 @@ seaam/
 │   ├── bus.py                  # Async EventBus
 │   ├── assimilator.py          # Dynamic module loader
 │   ├── materializer.py         # Atomic file writer
-│   └── immunity.py             # Error recovery & healing
+│   ├── immunity.py             # Error recovery & healing
+│   └── genealogy.py            # Evolutionary memory (Git)
 │
 ├── cortex/                     # 🧠 The Mind
 │   ├── __init__.py
@@ -228,6 +229,7 @@ dev = [
 | **Assimilator** | `seaam/kernel/assimilator.py` | Dynamic module loading |
 | **Materializer** | `seaam/kernel/materializer.py` | Atomic file writing |
 | **Immunity** | `seaam/kernel/immunity.py` | Error recovery & healing |
+| **Genealogy** | `seaam/kernel/genealogy.py` | Evolutionary memory & rollback |
 | **Architect** | `seaam/cortex/architect.py` | System designer |
 | **PromptLoader** | `seaam/cortex/prompt_loader.py` | YAML template management |
 | **LLMGateway** | `seaam/connectors/llm_gateway.py` | LLM provider abstraction |

@@ -76,17 +76,10 @@
     }
   ],
   "active_modules": [
-    "soma.analysis.prediction"
+    "soma.analysis.prediction",
+    "soma.perception.observer"
   ],
   "failures": [
-    {
-      "module_name": "soma.perception.observer",
-      "error_type": "import",
-      "error_message": "No module named 'soma.perception'",
-      "timestamp": "2026-01-29T20:42:51.516857Z",
-      "attempt_count": 1,
-      "context": {}
-    },
     {
       "module_name": "soma.memory.journal",
       "error_type": "import",
@@ -113,9 +106,9 @@
     }
   ],
   "metadata": {
-    "last_modified": "2026-01-29T20:43:38.594011Z",
-    "total_evolutions": 5,
+    "last_modified": "2026-01-29T20:44:16.072701Z",
+    "total_evolutions": 6,
     "total_failures": 4,
-    "last_successful_organ": "soma.analysis.prediction"
+    "last_successful_organ": "soma.perception.observer"
   }
 }

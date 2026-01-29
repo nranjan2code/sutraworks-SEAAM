@@ -22,6 +22,7 @@ graph TD
         Assimilator[Assimilator]
         Materializer[Materializer]
         Immunity[Immunity System]
+        Genealogy[Genealogy (Git)]
     end
     
     subgraph CORTEX [The Mind - seaam/cortex/]
@@ -471,6 +472,11 @@ sequenceDiagram
         IM->>G: Request blueprint
         G->>DNA: Add to blueprint
         Note right of G: Next cycle evolves it
+    else Critical Failure (Auto-Immune)
+        Note right of IM: Auto-Revert Triggered
+        IM->>DNA: Log runtime failure
+        IM->>G: trigger_revert()
+        G->>Genealogy: revert_last()
     else External Package
         IM->>IM: Check allowlist
         alt Allowed

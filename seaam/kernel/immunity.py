@@ -24,6 +24,12 @@ from seaam.core.exceptions import (
 )
 from seaam.dna.schema import FailureType
 
+# Avoid circular import with type checking only if needed, 
+# but here we pass the instance.
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from seaam.kernel.genealogy import Genealogy
+
 logger = get_logger("immunity")
 
 
@@ -51,6 +57,7 @@ class Immunity:
     - Uses pattern matching instead of hardcoded lists
     - Has configurable pip install (disabled by default)
     - Cleanly separates classification from action
+    - Can trigger metabolic revert (auto-rollback)
     """
     
     def __init__(
@@ -58,23 +65,55 @@ class Immunity:
         root_dir: Optional[Union[Path, str]] = None,
         on_blueprint_needed: Optional[Callable[[str, str], None]] = None,
         on_failure_report: Optional[Callable[[str, FailureType, str], None]] = None,
+        genealogy: Optional["Genealogy"] = None,
     ):
         """
         Args:
             root_dir: Project root directory
             on_blueprint_needed: Callback(module_name, description) when new blueprint is needed
             on_failure_report: Callback(module_name, error_type, message) to report failures
+            genealogy: Optional Genealogy instance for rollback
         """
         self.root_dir = Path(root_dir) if root_dir else config.paths.root
         self.soma_dir = self.root_dir / "soma"
         self.seaam_dir = self.root_dir / "seaam"
         self.on_blueprint_needed = on_blueprint_needed
         self.on_failure_report = on_failure_report
+        self.genealogy = genealogy
         
         # Security settings
         self.allow_pip_install = config.security.allow_pip_install
         self.allowed_packages = set(config.security.allowed_pip_packages)
     
+    def trigger_revert(self, organ_name: str, reason: str) -> bool:
+        """
+        Trigger an auto-immune response to revert the last evolution.
+        
+        This is called when a critical failure occurs immediately after evolution,
+        suggesting the new mutation is fatal (cancerous).
+        """
+        if not self.genealogy:
+            logger.warning("Auto-immune response requested but no genealogy system attached.")
+            return False
+            
+        logger.warning(f"🛡️ AUTO-IMMUNE RESPONSE TRIGGERED: {organ_name}")
+        logger.warning(f"Reason: {reason}")
+        
+        # Report the failure first so DNA records it
+        self._report_failure(
+            organ_name,
+            FailureType.RUNTIME,
+            f"Auto-Reverted due to critical failure: {reason}"
+        )
+        
+        # Execute rollback
+        if self.genealogy.revert_last():
+            logger.info("✓ System successfully reverted to previous healthy state.")
+            return True
+        else:
+            logger.error("Failed to execute auto-revert.")
+            return False
+
     def classify_dependency(self, package_name: str) -> DependencyClassification:
         """
         Classify a missing dependency.

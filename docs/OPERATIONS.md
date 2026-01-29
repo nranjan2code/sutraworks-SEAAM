@@ -113,6 +113,12 @@ metabolism:
   max_organs_per_cycle: 3       # Max organs to evolve per cycle
   reflection_timeout_seconds: 60
 
+# Evolutionary Memory
+genealogy:
+  enabled: true                 # Enable local git for soma
+  user_name: "SEAAM Genesis"    # Git user.name for soma repo
+  user_email: "genesis@seaam.internal"
+
 # Security Settings
 security:
   allow_pip_install: false      # DISABLED by default
@@ -148,6 +154,38 @@ environment: development        # 'development' or 'production'
 | `OLLAMA_URL` | Custom Ollama endpoint | `http://gpu-server:11434/api/generate` |
 | `OLLAMA_MODEL` | Override Ollama model | `codellama:34b` |
 | `GEMINI_API_KEY` | Enable Gemini fallback | `your-api-key` |
+
+---
+
+## 🧬 Evolutionary Memory (Git)
+
+The system maintains a full history of its evolution in `soma/.git`.
+
+### Viewing History
+
+```bash
+cd soma
+git log --oneline --graph
+```
+
+### Auto-Immune Response (Self-Healing)
+
+SEAAM is capable of **autonomous rollback**.
+
+If a newly evolved organ causes a critical failure (e.g., `ImportError`, `SyntaxError`) that prevents assimilation:
+1. `Immunity` detects the crash.
+2. It triggers a `genealogy.revert_last()`.
+3. The system returns to the previous healthy state.
+4. The mistake is logged in DNA to avoid repeating it.
+
+### Manual Rollback
+
+You can also manually revert if needed:
+
+```bash
+cd soma
+git reset --hard HEAD^
+```
 
 ---
 

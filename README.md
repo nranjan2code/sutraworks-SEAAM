@@ -53,6 +53,7 @@ Located in `seaam/kernel/`, the kernel is the DNA of SEAAM—it cannot be modifi
 | `assimilator.py` | Dynamic module loading and thread-based activation |
 | `materializer.py` | Atomic file writes with kernel protection |
 | `immunity.py` | Error recovery and dependency resolution |
+| `genealogy.py` | Evolutionary memory (local git) and rollback capability |
 
 ### 2. 🧠 **CORTEX** (The Mind)
 Located in `seaam/cortex/`, the cortex is responsible for reasoning and design.

@@ -47,7 +47,31 @@ sequenceDiagram
 
 ---
 
-## 2. DNA Structure (`dna.json`)
+---
+
+## 2. Evolutionary Memory (Genealogy)
+
+To prevent "catastrophic forgetting" or fatal mutations, the system maintains a **local version control system** for its own body.
+
+### Isolation Strategy
+
+The `soma/` directory acts as a nested Git repository. It is **ignored** by the main project's version control.
+
+```mermaid
+graph TD
+    Root[Project Root .git] -->|Ignores| SomaDir[soma/]
+    SomaDir -->|Contains| SomaGit[soma/.git]
+    SomaGit -->|Tracks| Organs[Evolved Organs]
+```
+
+This separation ensures:
+1. **Safety**: User code (Kernel) is separate from AI code (Soma)
+2. **Autonomy**: The AI can commit/revert its own code without affecting the user's workspace
+3. **Clarity**: The main repo stays clean of runtime generated artifacts
+
+---
+
+## 3. DNA Structure (`dna.json`)
 
 The DNA is the **single source of truth** for the organism. It persists across reboots and tracks the complete system state.
 
@@ -142,7 +166,7 @@ The system automatically migrates old DNA formats:
 
 ---
 
-## 3. Organ Lifecycle
+## 4. Organ Lifecycle
 
 Every organ goes through a defined lifecycle managed by the Kernel.
 
@@ -210,7 +234,7 @@ The Assimilator validates organs against these rules:
 
 ---
 
-## 4. Assimilation Protocol
+## 5. Assimilation Protocol
 
 When an organ is "Materialized" (code written to disk), it is not yet "Alive". Assimilation is the process of integrating it into the running runtime.
 

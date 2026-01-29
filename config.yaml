@@ -17,9 +17,15 @@ paths:
   dna: ./dna.json
   soma: ./soma
 
+
 metabolism:
   cycle_interval_seconds: 30
   max_organs_per_cycle: 3
+
+genealogy:
+  enabled: true
+  user_name: "SEAAM Genesis"
+  user_email: "genesis@seaam.internal"
 
 security:
   # IMPORTANT: Disabled by default for security

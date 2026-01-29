@@ -93,12 +93,21 @@ class LoggingConfig:
 
 
 @dataclass
+class GenealogyConfig:
+    """Evolutionary Memory (Git) configuration."""
+    enabled: bool = True
+    user_name: str = "SEAAM Genesis"
+    user_email: str = "genesis@seaam.internal"
+
+
+@dataclass
 class SEAAMConfig:
     """Root configuration object."""
     llm: LLMConfig = field(default_factory=LLMConfig)
     paths: PathsConfig = field(default_factory=PathsConfig)
     metabolism: MetabolismConfig = field(default_factory=MetabolismConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
+    genealogy: GenealogyConfig = field(default_factory=GenealogyConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     
     # Metadata
@@ -140,6 +149,11 @@ class SEAAMConfig:
             for key, value in data["logging"].items():
                 if hasattr(config.logging, key):
                     setattr(config.logging, key, value)
+        
+        if "genealogy" in data:
+            for key, value in data["genealogy"].items():
+                if hasattr(config.genealogy, key):
+                    setattr(config.genealogy, key, value)
         
         if "version" in data:
             config.version = data["version"]
@@ -232,6 +246,11 @@ class SEAAMConfig:
             "security": {
                 "allow_pip_install": self.security.allow_pip_install,
                 "allowed_pip_packages": self.security.allowed_pip_packages,
+            },
+            "genealogy": {
+                "enabled": self.genealogy.enabled,
+                "user_name": self.genealogy.user_name,
+                "user_email": self.genealogy.user_email,
             },
             "logging": {
                 "level": self.logging.level,

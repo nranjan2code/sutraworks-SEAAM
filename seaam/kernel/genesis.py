@@ -34,6 +34,7 @@ from seaam.kernel.materializer import Materializer
 from seaam.kernel.immunity import Immunity
 from seaam.connectors.llm_gateway import ProviderGateway
 from seaam.cortex.architect import Architect
+from seaam.kernel.genealogy import Genealogy
 
 logger = get_logger("genesis")
 
@@ -72,6 +73,11 @@ class Genesis:
         self.dna_repo = DNARepository(dna_path)
         self.dna = self.dna_repo.load_or_create()
         
+        # Initialize Evolutionary Memory (Git)
+        # MUST be initialized before Immunity so it can use it for rollback
+        self.genealogy = Genealogy()
+        self.genealogy.init_repo()
+        
         # Initialize components with callbacks
         self.materializer = Materializer(self.root_dir)
         self.assimilator = Assimilator(on_failure=self._handle_assimilation_failure)
@@ -79,6 +85,7 @@ class Genesis:
             root_dir=self.root_dir,
             on_blueprint_needed=self._handle_blueprint_request,
             on_failure_report=self._handle_failure_report,
+            genealogy=self.genealogy,
         )
         
         # Initialize LLM gateway
@@ -211,6 +218,9 @@ class Genesis:
                 data={"organ": organ_name},
                 source="genesis",
             ))
+
+            # Commit the evolution to memory
+            self.genealogy.commit(f"Evolved: {organ_name}")
             
             return True
             
@@ -361,6 +371,12 @@ class Genesis:
             data={"organ": module_name, "error": error_message},
             source="genesis",
         ))
+        
+        # Auto-Immune Response:
+        # If this failure is happening to a freshly evolved organ, 
+        # it might be fatal. Trigger revert if it's a validation or import error.
+        if failure_type in [FailureType.VALIDATION, FailureType.IMPORT]:
+             self.immunity.trigger_revert(module_name, error_message)
     
     def _handle_blueprint_request(self, module_name: str, description: str) -> None:
         """Handle blueprint requests from Immunity (for missing dependencies)."""
