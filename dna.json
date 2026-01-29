@@ -1,12 +1,20 @@
 {
   "system_version": "0.0.1",
   "system_name": "SEAAM-TabulaRasa",
-  "blueprint": {},
+  "blueprint": {
+    "seaam.memory.journal": "This module will be responsible for storing and retrieving information about past events. It will import seaam.kernel.bus to subscribe to relevant events and store them in a structured format, allowing the system to learn from its experiences.",
+    "seaam.interface.dashboard": "This module will be responsible for providing a visual dashboard to communicate the state of the AI system to the user. It will import seaam.kernel.bus to subscribe to relevant events and display them in an intuitive interface, allowing users to monitor the system's activities and status.",
+    "seaam.perception.observer": "This module will be responsible for perceiving the file system and understanding the user's project. It will import seaam.kernel.bus to subscribe to relevant events such as file modifications, creations, or deletions. The observer will then analyze these changes and provide insights or trigger actions based on the current state of the project."
+  },
   "goals": [
     "I must be able to perceive the file system to understand the user's project.",
     "I must have a memory of past events to learn from mistakes.",
     "I must have a visual dashboard to communicate my state to the user."
   ],
-  "active_modules": [],
+  "active_modules": [
+    "seaam.memory.journal",
+    "seaam.interface.dashboard",
+    "seaam.perception.observer"
+  ],
   "failures": []
 }

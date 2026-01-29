@@ -59,10 +59,11 @@ class Architect:
         {json.dumps(failures, indent=2)}
         
         TASK:
-        1. REVIEW PREVIOUS FAILURES. If a module failed (e.g. missing start()), you MUST output a JSON to REDEFINE that module with specific instructions to fix the error.
-        2. Identify the single most critical MISSING component to achieve the GOALS.
+        1. ANALYZE PREVIOUS FAILURES. If an organ is failing, your #1 priority is to REDEFINE its blueprint with a fix.
+        2. EVALUATE ALL GOALS vs BLUEPRINT. Compare the existing organs against ALL system goals.
+        3. PROPOSE NEXT GROWTH: Identify the single most important component that is MISSING to satisfy the remaining goals. Be proactive! Don't wait. If we have a reflex but no memory storage, suggest a memory organ. If we have no dashboard, suggest that.
         
-        If the system is complete and healthy (no failures), return "COMPLETE".
+        If the system is complete and healthy (all goals fully satisfied), return "COMPLETE".
 
         CRITICAL KERNEL CONTRACT: 
         - The system HAS a nervous system: `seaam.kernel.bus`. 

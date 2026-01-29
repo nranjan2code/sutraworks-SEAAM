@@ -20,6 +20,7 @@ class Genesis:
         self.gateway = ProviderGateway()
         self.dna = self._load_dna()
         self.architect = Architect(self.dna, self._save_dna)
+        self.running_organs = set() # Track what is already active to prevent double-integration
 
     def _load_dna(self):
         try:
@@ -56,11 +57,30 @@ class Genesis:
         self._live()
 
     def _live(self):
-        print("[LIFE] Entering metabolic stasis (Ctrl+C to stop)...")
-        # In a real system, we would loop through organs and call .update()
+        print("[LIFE] Entering metabolic stasis with continuous evolution (Ctrl+C to stop)...")
         try:
             while True:
-                time.sleep(1)
+                # PERIODIC METABOLISM: Think and Grow
+                print("\n[METABOLISM] Periodic reflection cycle...")
+                
+                # 1. Reflect
+                self.architect.reflect()
+                
+                # 2. Audit
+                missing = self._audit()
+                
+                # 3. Evolve (if needed)
+                if missing:
+                    print(f"[METABOLISM] New needs detected: {list(missing.keys())}")
+                    self._evolve_step(missing)
+                    
+                    # 4. Integrate new growth
+                    self._assimilate()
+                
+                # Wait before next cycle (e.g. 30 seconds for demonstration)
+                # In production this might be longer or event-driven.
+                time.sleep(30)
+                
         except KeyboardInterrupt:
             print("[LIFE] Shutting down.")
 
@@ -69,9 +89,16 @@ class Genesis:
         Dynamically imports and activates the grown organs.
         """
         active_modules = self.dna.get("active_modules", [])
-        print(f"[ASSIMILATION] Integrating {len(active_modules)} organs...")
         
-        for module_name in active_modules:
+        # Only integrate what isn't already running
+        to_integrate = [m for m in active_modules if m not in self.running_organs]
+        
+        if not to_integrate:
+            return
+
+        print(f"[ASSIMILATION] Integrating {len(to_integrate)} new organs...")
+        
+        for module_name in to_integrate:
             try:
                 # seaam.perception.observer -> from seaam.perception.observer import *
                 module = importlib.import_module(module_name)
@@ -94,6 +121,7 @@ class Genesis:
                         continue
                     
                     print(f"  - [STARTED] {module_name} (Thread)")
+                    self.running_organs.add(module_name)
                 else:
                     # FEEDBACK LOOP: Report failure to DNA so Architect can fix it.
                     error_msg = f"Module {module_name} rejected: Missing global start() function."
@@ -207,9 +235,6 @@ class Genesis:
                 print(f"[GENESIS] Organ '{organ_name}' GROWN.")
             else:
                 print(f"[GENESIS] Failed to grow {organ_name}. Retrying in next epoch.")
-        
-        # Reload DNA to reflect changes
-        self.dna = self._load_dna()
 
     def _audit(self):
         """
