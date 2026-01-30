@@ -316,12 +316,12 @@ python3 -m pytest tests/unit/test_bus.py::TestEventBus::test_subscribe_and_publi
 |--------|-------|-------------|
 | EventBus | 12 | Subscribe, publish, async, unsubscribe, drain |
 | DNA Schema | 17 | Serialization, legacy migration, operations |
-| Materializer | 9 | Atomic writes, kernel protection, packages |
+| Materializer | 16 | Atomic writes, kernel protection, **security (path traversal)** |
 | Assimilator | 6 | Module loading, validation, batch |
 | Genealogy | 4 | Git init, commit, revert |
 | Auto-Immune | 3 | Revert triggers, failure handling |
 | **Integration** | **28** | Code validation, circuit breaker, goals, config |
-| **Total** | **81** | All passing |
+| **Total** | **89** | All passing |
 
 ### Code Quality
 
@@ -346,10 +346,16 @@ mypy seaa/
 
 ### Default Security Posture
 
-SEAA follows **security-first** principles:
+SEAA follows **security-first** principles with defense in depth:
 
 | Protection | Default | Description |
 |------------|---------|-------------|
+| Path Traversal | **Blocked** | Module names validated with regex pattern |
+| Module Validation | **Enabled** | Only `soma.*` with valid identifiers imported |
+| Star Imports | **Blocked** | `from X import *` rejected for non-seaa modules |
+| Forbidden Imports | **Extended** | Blocks pip, subprocess, ctypes, socket, pickle, etc. |
+| Prompt Injection | **Protected** | Error messages sanitized before LLM prompts |
+| DNA Integrity | **Verified** | SHA-256 hash detects file tampering |
 | Pip Install | **Disabled** | External packages cannot be installed |
 | Package Allowlist | Limited | Only approved packages can be installed |
 | Kernel Protection | **Enabled** | Cannot write to `seaa/*` |
@@ -501,6 +507,55 @@ WARNING  [GENESIS     ] Circuit breaker OPEN for soma.xyz, skipping evolution
 2. Manually reset circuit (see Circuit Breaker section)
 3. Check `dna.json` failures for root cause
 4. Fix the underlying issue before resetting
+
+---
+
+#### `Security: Path traversal detected` or `Invalid module name format`
+
+**Symptoms:**
+```
+ERROR    [MATERIALIZER] Invalid module name format: 'soma..evil'
+ERROR    [MATERIALIZER] Path traversal detected in module name
+```
+
+**Causes:**
+- LLM generated a malicious or malformed module name
+- Attempt to escape the soma/ directory
+- Module name contains invalid Python identifiers
+
+**Solutions:**
+1. This is security protection working correctly
+2. The system will retry with valid module names
+3. Check prompt templates for clear module naming instructions
+4. Valid format: `soma.<category>.<name>` (e.g., `soma.perception.observer`)
+
+---
+
+#### `DNA file integrity check failed`
+
+**Symptoms:**
+```
+ERROR    [REPOSITORY  ] SECURITY: DNA integrity check FAILED!
+DNACorruptedError: DNA file integrity check failed - possible tampering detected
+```
+
+**Causes:**
+- `dna.json` was modified outside the system
+- File corruption
+- Possible tampering
+
+**Solutions:**
+1. If you legitimately edited the file, recalculate the hash:
+   ```python
+   from seaa.dna.repository import DNARepository
+   repo = DNARepository("dna.json")
+   repo.recalculate_integrity_hash()
+   ```
+2. Or restore from backup: `cp .dna_backups/dna_YYYYMMDD_HHMMSS.json dna.json`
+3. To skip verification (debugging only):
+   ```python
+   repo = DNARepository("dna.json", verify_integrity=False)
+   ```
 
 ---
 

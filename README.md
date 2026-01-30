@@ -6,7 +6,7 @@
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-  [![Tests](https://img.shields.io/badge/tests-81%20passing-success.svg)]()
+  [![Tests](https://img.shields.io/badge/tests-89%20passing-success.svg)]()
   [![Status: Alive](https://img.shields.io/badge/Status-Autopoietic-success.svg)]()
   
   > *"The code that writes itself."*
@@ -149,7 +149,7 @@ Options:
 
 ## 🧪 Testing
 
-The agent has a comprehensive test suite with **81 passing tests**.
+The agent has a comprehensive test suite with **89 passing tests**.
 
 ```bash
 # Run all tests
@@ -170,7 +170,7 @@ python3 -m pytest tests/integration/test_validation.py -v
 |--------|-------|----------|
 | EventBus | 12 | Subscribe, publish, async, unsubscribe, drain |
 | DNA Schema | 17 | Serialization, legacy migration, all operations |
-| Materializer | 9 | Atomic writes, kernel protection, packages |
+| Materializer | 16 | Atomic writes, kernel protection, security (path traversal) |
 | Assimilator | 6 | Module integration, validation, batch |
 | Auto-Immune | 3 | Revert, rollback, failure handling |
 | Genealogy | 4 | Git init, commit, revert |
@@ -304,10 +304,15 @@ logging:
 The agent follows security-first principles:
 
 - **Kernel Protection**: The system cannot modify `seaa/*` files
+- **Path Traversal Protection**: Module names are strictly validated with regex patterns
+- **Module Name Validation**: Only `soma.*` with valid Python identifiers can be imported
 - **Code Validation**: AST-based validation rejects:
   - Syntax errors
-  - Forbidden imports (`pip`, `subprocess`, `os.system`, `eval`, `exec`)
+  - Forbidden imports (`pip`, `subprocess`, `os.system`, `eval`, `exec`, `ctypes`, `socket`, `pickle`, etc.)
+  - Star imports from non-seaa modules (`from os import *`)
   - Missing or invalid `start()` function signatures
+- **Prompt Injection Protection**: Error messages are sanitized before embedding in LLM prompts
+- **DNA Integrity**: SHA-256 hash verification detects file tampering
 - **Pip Disabled by Default**: External package installation requires explicit opt-in
 - **Allowlist**: Only approved packages can be installed even when enabled
 - **Atomic Writes**: Prevents file corruption from interrupted writes

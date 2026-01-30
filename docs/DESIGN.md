@@ -371,7 +371,7 @@ flowchart TD
 
 ### Code Validation (`validate_code()`)
 
-The Gateway performs three-layer validation:
+The Gateway performs comprehensive multi-layer validation:
 
 ```python
 def validate_code(self, code: str, module_name: str) -> Tuple[bool, Optional[str]]:
@@ -381,19 +381,54 @@ def validate_code(self, code: str, module_name: str) -> Tuple[bool, Optional[str
     except SyntaxError as e:
         return False, f"Syntax error at line {e.lineno}: {e.msg}"
 
-    # 2. Forbidden imports check
+    # 2. Forbidden imports check (extended list)
     FORBIDDEN_IMPORTS = frozenset([
-        'pip', 'subprocess', 'os.system', 'os.popen',
-        'eval', 'exec', 'compile', '__import__',
+        # Package installation
+        'pip', 'setuptools', 'distutils',
+        # Process execution
+        'subprocess', 'os.system', 'os.popen', 'os.spawn*', 'os.exec*', 'os.fork',
+        'commands', 'pty',
+        # Dynamic code execution
+        '__import__', 'eval', 'exec', 'compile', 'importlib.import_module',
+        # Dangerous low-level modules
+        'ctypes', 'cffi',
+        # Network (data exfiltration risk)
+        'socket', 'urllib.request', 'http.client', 'ftplib', 'smtplib',
+        # Unsafe serialization
+        'pickle', 'marshal', 'shelve',
     ])
+
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name in FORBIDDEN_IMPORTS:
+                if self._is_forbidden_import(alias.name):
                     return False, f"Forbidden import: {alias.name}"
+
+        # 2b. Star import detection (security)
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.name == "*" and not node.module.startswith("seaa."):
+                    return False, f"Star import forbidden: from {node.module} import *"
 
     # 3. start() signature validation
     return self._validate_start_signature(tree)
+```
+
+### Prompt Injection Protection
+
+Error messages are sanitized before embedding in LLM prompts:
+
+```python
+def _sanitize_for_prompt(self, text: str) -> str:
+    """Prevent prompt injection via error messages."""
+    dangerous_patterns = [
+        "{{", "}}", "{%", "%}",  # Template injection
+        "IGNORE", "DISREGARD",   # Common injection phrases
+        "SYSTEM:", "USER:",      # Role hijacking
+    ]
+    for pattern in dangerous_patterns:
+        text = text.replace(pattern, f"[{pattern}]")
+    return text[:500]  # Length limit
 ```
 
 ### Retry Protocol with Specific Feedback

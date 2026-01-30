@@ -33,17 +33,59 @@ logger = get_logger("gateway")
 
 # Forbidden imports that could compromise system security
 FORBIDDEN_IMPORTS = frozenset([
+    # Package installation
     'pip',
+    'setuptools',
+    'distutils',
+    # Process execution
     'subprocess',
     'os.system',
     'os.popen',
     'os.spawn',
+    'os.spawnl',
+    'os.spawnle',
+    'os.spawnlp',
+    'os.spawnlpe',
+    'os.spawnv',
+    'os.spawnve',
+    'os.spawnvp',
+    'os.spawnvpe',
     'os.exec',
+    'os.execl',
+    'os.execle',
+    'os.execlp',
+    'os.execlpe',
+    'os.execv',
+    'os.execve',
+    'os.execvp',
+    'os.execvpe',
+    'os.fork',
+    'os.forkpty',
     'commands',
+    'pty',
+    # Dynamic code execution
     '__import__',
     'eval',
     'exec',
     'compile',
+    'importlib.import_module',
+    # Low-level dangerous modules
+    'ctypes',
+    'cffi',
+    # Network (potential for data exfiltration)
+    'socket',
+    'urllib.request',
+    'http.client',
+    'ftplib',
+    'smtplib',
+    'telnetlib',
+    # File operations that could be dangerous
+    'shutil.rmtree',
+    'shutil.move',
+    # Code loading
+    'pickle',
+    'marshal',
+    'shelve',
 ])
 
 
@@ -175,15 +217,18 @@ class ProviderGateway:
                 logger.warning(f"Validation FAILED: {error_message}")
                 last_error = error_message
 
+                # SECURITY: Sanitize error message before embedding in prompt
+                safe_error_message = self._sanitize_for_prompt(error_message)
+
                 # Build detailed error feedback
                 try:
                     feedback = prompt_loader.render(
                         "error_feedback",
-                        error_message=error_message,
+                        error_message=safe_error_message,
                         additional_instruction=self._get_fix_instruction(error_message),
                     )
                 except FileNotFoundError:
-                    feedback = f"\n\nCRITICAL ERROR: {error_message}\n{self._get_fix_instruction(error_message)}"
+                    feedback = f"\n\nCRITICAL ERROR: {safe_error_message}\n{self._get_fix_instruction(error_message)}"
 
                 current_prompt = prompt + feedback
                 continue
@@ -194,8 +239,51 @@ class ProviderGateway:
         logger.error(f"Failed to generate valid code after {max_retries} attempts. Last error: {last_error}")
         return None
 
+    def _sanitize_for_prompt(self, text: str) -> str:
+        """
+        SECURITY: Sanitize text before embedding in LLM prompts.
+
+        Prevents prompt injection by escaping/removing potentially dangerous patterns.
+        """
+        if not text or not isinstance(text, str):
+            return ""
+
+        # Limit length to prevent DoS
+        text = text[:500]
+
+        # Remove or escape potentially dangerous patterns
+        # These could be used for prompt injection
+        dangerous_patterns = [
+            "{{", "}}",           # Template injection
+            "{%", "%}",           # Jinja2 blocks
+            "```",                # Code blocks that might confuse parsing
+            "IGNORE",             # Common injection phrase
+            "DISREGARD",          # Common injection phrase
+            "FORGET",             # Common injection phrase
+            "NEW INSTRUCTION",    # Injection attempt
+            "SYSTEM:",            # Role hijacking
+            "USER:",              # Role hijacking
+            "ASSISTANT:",         # Role hijacking
+        ]
+
+        sanitized = text
+        for pattern in dangerous_patterns:
+            sanitized = sanitized.replace(pattern, f"[{pattern}]")
+
+        # Escape newlines to prevent multi-line injection
+        sanitized = sanitized.replace("\n", " ").replace("\r", " ")
+
+        return sanitized
+
     def _get_fix_instruction(self, error_message: str) -> str:
-        """Get specific fix instructions based on the error type."""
+        """
+        Get specific fix instructions based on the error type.
+
+        SECURITY: Error messages are sanitized before use in prompts.
+        """
+        # Sanitize the error message to prevent injection
+        safe_error = self._sanitize_for_prompt(error_message)
+
         if "Syntax error" in error_message:
             return "Fix the syntax error. Return valid Python code only, no markdown."
         elif "Forbidden imports" in error_message:
@@ -242,7 +330,17 @@ class ProviderGateway:
             elif isinstance(node, ast.ImportFrom):
                 if node.module and self._is_forbidden_import(node.module):
                     forbidden_found.append(node.module)
+
+                # SECURITY: Detect star imports (from X import *)
                 for alias in node.names:
+                    if alias.name == "*":
+                        # Star imports from non-seaa modules are forbidden
+                        # as they can import dangerous functions like os.system
+                        if node.module and not node.module.startswith("seaa."):
+                            forbidden_found.append(f"{node.module}.*")
+                            logger.warning(f"Security: Star import detected from {node.module}")
+                        continue
+
                     full_name = f"{node.module}.{alias.name}" if node.module else alias.name
                     if self._is_forbidden_import(full_name):
                         forbidden_found.append(full_name)

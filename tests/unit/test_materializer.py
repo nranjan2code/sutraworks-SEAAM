@@ -37,11 +37,24 @@ class TestMaterializer:
         assert (temp_dir / "soma" / "deep" / "nested" / "organ.py").exists()
     
     def test_kernel_protection(self, temp_dir, sample_organ_code):
-        """Test that seaa.* modules are protected."""
+        """Test that seaa.* modules are protected.
+
+        Note: With security hardening, non-soma modules are rejected at
+        format validation before reaching kernel protection check.
+        """
         materializer = Materializer(root_dir=temp_dir)
-        
-        with pytest.raises(KernelProtectionError):
+
+        # Non-soma modules are rejected by format validation first
+        with pytest.raises(MaterializationError):
             materializer.materialize("seaa.kernel.bus", sample_organ_code)
+
+    def test_kernel_protection_via_traversal(self, temp_dir, sample_organ_code):
+        """Test that path traversal attempts to reach seaa.* are blocked."""
+        materializer = Materializer(root_dir=temp_dir)
+
+        # Attempt path traversal - should be caught by security validation
+        with pytest.raises(MaterializationError):
+            materializer.materialize("soma....seaa.kernel.bus", sample_organ_code)
     
     def test_soma_prefix_required(self, temp_dir, sample_organ_code):
         """Test that non-soma modules are rejected."""
@@ -96,13 +109,72 @@ class TestMaterializer:
     def test_atomic_write(self, temp_dir, sample_organ_code):
         """Test that writes are atomic (no partial files)."""
         materializer = Materializer(root_dir=temp_dir)
-        
+
         # Materialize
         path = materializer.materialize("soma.test.organ", sample_organ_code)
-        
+
         # Check no temp files left
         temp_files = list(temp_dir.rglob("*.tmp"))
         assert len(temp_files) == 0
-        
+
         # Check content is complete
         assert path.read_text() == sample_organ_code
+
+
+class TestMaterializerSecurity:
+    """Security-focused tests for the Materializer."""
+
+    def test_path_traversal_double_dots_rejected(self, temp_dir, sample_organ_code):
+        """Test that path traversal with .. is rejected."""
+        materializer = Materializer(root_dir=temp_dir)
+
+        with pytest.raises(MaterializationError) as exc_info:
+            materializer.materialize("soma..test", sample_organ_code)
+        assert "traversal" in str(exc_info.value).lower() or "invalid" in str(exc_info.value).lower()
+
+    def test_path_traversal_many_dots_rejected(self, temp_dir, sample_organ_code):
+        """Test that path traversal with many dots is rejected."""
+        materializer = Materializer(root_dir=temp_dir)
+
+        with pytest.raises(MaterializationError):
+            materializer.materialize("soma.....test", sample_organ_code)
+
+    def test_invalid_identifier_rejected(self, temp_dir, sample_organ_code):
+        """Test that invalid Python identifiers are rejected."""
+        materializer = Materializer(root_dir=temp_dir)
+
+        # Leading number
+        with pytest.raises(MaterializationError):
+            materializer.materialize("soma.123test", sample_organ_code)
+
+        # Special characters
+        with pytest.raises(MaterializationError):
+            materializer.materialize("soma.test-organ", sample_organ_code)
+
+    def test_empty_component_rejected(self, temp_dir, sample_organ_code):
+        """Test that empty path components are rejected."""
+        materializer = Materializer(root_dir=temp_dir)
+
+        with pytest.raises(MaterializationError):
+            materializer.materialize("soma..organ", sample_organ_code)
+
+    def test_non_soma_prefix_rejected(self, temp_dir, sample_organ_code):
+        """Test that non-soma prefixed modules are rejected."""
+        materializer = Materializer(root_dir=temp_dir)
+
+        with pytest.raises(MaterializationError):
+            materializer.materialize("other.test.organ", sample_organ_code)
+
+    def test_just_soma_rejected(self, temp_dir, sample_organ_code):
+        """Test that 'soma' alone (without sub-module) is rejected."""
+        materializer = Materializer(root_dir=temp_dir)
+
+        with pytest.raises(MaterializationError):
+            materializer.materialize("soma", sample_organ_code)
+
+    def test_valid_deep_nesting_accepted(self, temp_dir, sample_organ_code):
+        """Test that valid deeply nested modules are accepted."""
+        materializer = Materializer(root_dir=temp_dir)
+
+        path = materializer.materialize("soma.a.b.c.d.organ", sample_organ_code)
+        assert path.exists()

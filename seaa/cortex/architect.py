@@ -11,12 +11,16 @@ Responsibilities:
 """
 
 import json
+import re
 from typing import Callable, Optional
 
 from seaa.core.logging import get_logger
 from seaa.core.config import config
 from seaa.dna.schema import DNA, Goal
 from seaa.cortex.prompt_loader import prompt_loader
+
+# Security: Strict module name pattern - only valid Python identifiers under soma.*
+MODULE_NAME_PATTERN = re.compile(r'^soma(\.[a-z_][a-z0-9_]*)+$', re.IGNORECASE)
 
 logger = get_logger("architect")
 
@@ -143,28 +147,75 @@ class Architect:
         Or return {{"module_name": "COMPLETE"}} if satisfied.
         """
     
+    def _validate_module_name(self, module_name: str) -> bool:
+        """
+        SECURITY: Validate module name from LLM response.
+
+        Prevents path traversal and injection attacks via malicious module names.
+
+        Returns:
+            True if module name is valid, False otherwise
+        """
+        if not module_name or not isinstance(module_name, str):
+            return False
+
+        # Special case for completion signal
+        if module_name == "COMPLETE":
+            return True
+
+        # Must start with soma.
+        if not module_name.startswith("soma."):
+            logger.warning(f"Security: Rejected module name not starting with 'soma.': {module_name}")
+            return False
+
+        # Check against strict pattern
+        if not MODULE_NAME_PATTERN.match(module_name):
+            logger.warning(f"Security: Rejected invalid module name format: {module_name}")
+            return False
+
+        # No path traversal attempts
+        if ".." in module_name:
+            logger.warning(f"Security: Path traversal detected in module name: {module_name}")
+            return False
+
+        # Check each part is a valid Python identifier
+        parts = module_name.split(".")
+        for part in parts:
+            if not part.isidentifier():
+                logger.warning(f"Security: Invalid identifier '{part}' in module name: {module_name}")
+                return False
+
+        return True
+
     def _process_response(self, response: str) -> bool:
         """
         Parse and apply the Architect's response.
-        
+
+        SECURITY: Validates module names from LLM to prevent injection attacks.
+
         Returns:
             True if DNA was modified
         """
         try:
             # Extract JSON from response
             json_data = self._extract_json(response)
-            
+
             if not json_data:
                 if "COMPLETE" in response.upper():
                     logger.info("Content with current form")
                 else:
                     logger.warning(f"Unstructured thought: {response[:100]}...")
                 return False
-            
+
             # Parse the plan
             module_name = json_data.get("module_name")
             description = json_data.get("description")
             new_goal = json_data.get("new_goal")
+
+            # SECURITY: Validate module name before using it
+            if module_name and not self._validate_module_name(module_name):
+                logger.error(f"Security: Rejected invalid module name from LLM: {module_name}")
+                return False
             
             # Check for completion
             if module_name == "COMPLETE":
@@ -219,27 +270,57 @@ class Architect:
     def _extract_json(self, text: str) -> Optional[dict]:
         """
         Extract JSON object from text response.
-        
+
         Handles LLMs that include extra text around JSON.
+        SECURITY: Uses proper depth tracking instead of first/last brace matching.
         """
-        # Find JSON object
-        start_idx = text.find("{")
-        end_idx = text.rfind("}")
-        
-        if start_idx == -1 or end_idx == -1:
-            return None
-        
-        json_str = text[start_idx:end_idx + 1]
-        
-        try:
-            return json.loads(json_str)
-        except json.JSONDecodeError:
-            # Try to clean up common issues
-            cleaned = self._clean_json_string(json_str)
-            try:
-                return json.loads(cleaned)
-            except json.JSONDecodeError:
-                return None
+        # Find first complete JSON object using proper depth tracking
+        depth = 0
+        start_idx = -1
+        in_string = False
+        escape_next = False
+
+        for i, char in enumerate(text):
+            if escape_next:
+                escape_next = False
+                continue
+
+            if char == '\\' and in_string:
+                escape_next = True
+                continue
+
+            if char == '"' and not escape_next:
+                in_string = not in_string
+                continue
+
+            if in_string:
+                continue
+
+            if char == '{':
+                if depth == 0:
+                    start_idx = i
+                depth += 1
+            elif char == '}':
+                depth -= 1
+                if depth == 0 and start_idx != -1:
+                    json_str = text[start_idx:i + 1]
+                    try:
+                        result = json.loads(json_str)
+                        if isinstance(result, dict):
+                            return result
+                    except json.JSONDecodeError:
+                        # Try cleaning and parsing again
+                        cleaned = self._clean_json_string(json_str)
+                        try:
+                            result = json.loads(cleaned)
+                            if isinstance(result, dict):
+                                return result
+                        except json.JSONDecodeError:
+                            pass
+                    # Reset and try to find next JSON object
+                    start_idx = -1
+
+        return None
     
     def _clean_json_string(self, text: str) -> str:
         """

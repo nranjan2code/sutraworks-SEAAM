@@ -12,6 +12,7 @@ completely isolated from the project's main version control.
 """
 
 import os
+import re
 import subprocess
 from pathlib import Path
 from typing import List, Optional, Dict, Union
@@ -20,6 +21,9 @@ from seaa.core.logging import get_logger
 from seaa.core.config import config
 
 logger = get_logger("genealogy")
+
+# Security: Pattern for valid git config values
+SAFE_CONFIG_PATTERN = re.compile(r'^[a-zA-Z0-9@._\-\s]+$')
 
 
 class Genealogy:
@@ -40,9 +44,69 @@ class Genealogy:
         # Ensure absolute path for safety
         self.soma_path = self.soma_path.resolve()
 
+    def _validate_config_value(self, value: str, field_name: str) -> str:
+        """
+        SECURITY: Validate git config values to prevent command injection.
+
+        Args:
+            value: The config value to validate
+            field_name: Name of the field (for error messages)
+
+        Returns:
+            The validated value
+
+        Raises:
+            ValueError: If the value is invalid or potentially malicious
+        """
+        if not value or not isinstance(value, str):
+            raise ValueError(f"Invalid {field_name}: must be non-empty string")
+
+        # Check length
+        if len(value) > 200:
+            raise ValueError(f"Invalid {field_name}: exceeds maximum length of 200 characters")
+
+        # Check for command injection patterns
+        if value.startswith("-"):
+            raise ValueError(f"Invalid {field_name}: cannot start with '-' (potential option injection)")
+
+        if "\n" in value or "\r" in value:
+            raise ValueError(f"Invalid {field_name}: cannot contain newlines")
+
+        if "\x00" in value:
+            raise ValueError(f"Invalid {field_name}: cannot contain null bytes")
+
+        # Validate against safe pattern
+        if not SAFE_CONFIG_PATTERN.match(value):
+            raise ValueError(
+                f"Invalid {field_name}: contains invalid characters. "
+                "Only alphanumeric, @, ., _, -, and spaces allowed."
+            )
+
+        return value
+
+    def _validate_commit_message(self, message: str) -> str:
+        """
+        SECURITY: Validate commit messages to prevent injection.
+        """
+        if not message or not isinstance(message, str):
+            return "Evolution snapshot"
+
+        # Limit length
+        message = message[:500]
+
+        # Remove potentially dangerous characters
+        message = message.replace("\x00", "")
+
+        # Escape quotes for safety
+        message = message.replace('"', '\\"')
+
+        return message
+
     def init_repo(self) -> bool:
         """
         Initialize the git repository if it doesn't exist.
+
+        SECURITY: Validates config values before use.
         """
         if not self.enabled:
             return False
@@ -52,15 +116,25 @@ class Genealogy:
             return True
 
         try:
+            # SECURITY: Validate config values before use
+            user_name = self._validate_config_value(
+                config.genealogy.user_name,
+                "genealogy.user_name"
+            )
+            user_email = self._validate_config_value(
+                config.genealogy.user_email,
+                "genealogy.user_email"
+            )
+
             # Ensure directory exists
             self.soma_path.mkdir(parents=True, exist_ok=True)
-            
+
             logger.info("Initializing evolutionary memory (git)...")
             self._run_git(["init"])
-            
-            # Configure local user for this repo
-            self._run_git(["config", "user.name", config.genealogy.user_name])
-            self._run_git(["config", "user.email", config.genealogy.user_email])
+
+            # Configure local user for this repo (with validated values)
+            self._run_git(["config", "user.name", user_name])
+            self._run_git(["config", "user.email", user_email])
             
             # create initial commit
             initial_file = self.soma_path / "README.md"
@@ -78,14 +152,19 @@ class Genealogy:
     def commit(self, message: str) -> bool:
         """
         Snapshot the current state of the SOMA.
-        
+
         Args:
             message: Commit message describing the change
+
+        SECURITY: Validates commit message before use.
         """
         if not self.enabled:
             return False
 
         try:
+            # SECURITY: Validate commit message
+            safe_message = self._validate_commit_message(message)
+
             # Check if there are changes
             status = self._run_git(["status", "--porcelain"], capture_output=True)
             if not status.strip():
@@ -93,8 +172,8 @@ class Genealogy:
                 return False
 
             self._run_git(["add", "."])
-            self._run_git(["commit", "-m", message])
-            logger.info(f"Evolution captured: {message}")
+            self._run_git(["commit", "-m", safe_message])
+            logger.info(f"Evolution captured: {safe_message}")
             return True
         except Exception as e:
             logger.error(f"Failed to commit evolution: {e}")
@@ -120,9 +199,16 @@ class Genealogy:
         """
         Get the diff between current HEAD and previous generations.
         Useful for the Architect to understand what changed.
+
+        SECURITY: Validates generations parameter.
         """
         if not self.enabled:
             return ""
+
+        # SECURITY: Validate generations is a reasonable positive integer
+        if not isinstance(generations, int) or generations < 1 or generations > 100:
+            logger.warning(f"Invalid generations value: {generations}, using 1")
+            generations = 1
 
         try:
             return self._run_git(["diff", f"HEAD~{generations}", "HEAD"], capture_output=True)

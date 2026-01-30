@@ -149,6 +149,8 @@ class Assimilator:
 Writes generated organ code to the filesystem with **safety guarantees**.
 
 **Features:**
+- **Module Name Validation**: Strict regex pattern `^soma(\.[a-z_][a-z0-9_]*)+$`
+- **Path Traversal Protection**: Resolved paths verified to stay within root directory
 - **Atomic Writes**: Write to temp file, then rename (prevents corruption)
 - **Package Structure**: Auto-creates `__init__.py` in all directories
 - **Kernel Protection**: Cannot write to `seaa/*` paths
@@ -156,11 +158,26 @@ Writes generated organ code to the filesystem with **safety guarantees**.
 ```python
 class Materializer:
     def materialize(self, module_name: str, code: str) -> Path:
-        self._check_protection(module_name)  # Raises if protected
-        file_path = self._module_to_path(module_name)
+        self._validate_module_name(module_name)  # Security: regex + identifier check
+        self._check_protection(module_name)      # Raises if protected
+        file_path = self._module_to_path(module_name)  # Includes path canonicalization
         self._ensure_package_structure(file_path.parent)
         self._atomic_write(file_path, code)
         return file_path
+```
+
+**Security Validation:**
+```python
+# Module names must match this pattern
+MODULE_NAME_PATTERN = re.compile(r'^soma(\.[a-z_][a-z0-9_]*)+$', re.IGNORECASE)
+
+# Path traversal detection
+if ".." in module_name:
+    raise MaterializationError("Path traversal detected")
+
+# Path canonicalization
+resolved_path = final_path.resolve()
+resolved_path.relative_to(root_dir.resolve())  # Raises if escapes
 ```
 
 ### `immunity.py` - Error Recovery
@@ -529,13 +546,20 @@ sequenceDiagram
 
 ## 8. Security Model
 
-SEAA follows a **security-first** design:
+SEAA follows a **security-first** design with defense in depth:
 
 | Protection | Mechanism |
 |------------|-----------|
 | Kernel Immutability | Materializer rejects writes to `seaa/*` |
+| **Path Traversal Prevention** | Module names validated with regex: `^soma(\.[a-z_][a-z0-9_]*)+$` |
+| **Module Name Validation** | Assimilator only imports validated `soma.*` modules |
+| **Path Canonicalization** | Resolved paths verified to stay within `root_dir` |
 | Code Validation | AST-based syntax + forbidden import checking |
-| Forbidden Imports | `pip`, `subprocess`, `os.system`, `eval`, `exec` blocked |
+| **Star Import Detection** | `from X import *` rejected for non-seaa modules |
+| Forbidden Imports | `pip`, `subprocess`, `os.system`, `eval`, `exec`, `ctypes`, `socket`, `pickle`, etc. |
+| **Prompt Injection Protection** | Error messages sanitized before embedding in LLM prompts |
+| **DNA Integrity** | SHA-256 hash verification detects tampering |
+| **JSON Parsing** | Proper depth tracking prevents manipulation |
 | Pip Disabled | `allow_pip_install: false` by default |
 | Package Allowlist | Only approved packages can be installed |
 | Atomic Writes | Prevents file corruption |
@@ -543,12 +567,13 @@ SEAA follows a **security-first** design:
 | Resource Limits | `max_concurrent_organs`, `max_total_organs` caps |
 | Circuit Breaker | Failing organs auto-disabled after max attempts |
 | Config Validation | Invalid configuration rejected at startup |
+| **Git Config Validation** | User name/email validated before git commands |
 
 ---
 
 ## 9. Testing Architecture
 
-The test suite covers all critical components with **81 tests**.
+The test suite covers all critical components with **89 tests**.
 
 ```
 tests/
@@ -562,7 +587,7 @@ tests/
 ├── unit/
 │   ├── test_bus.py          # EventBus (12 tests)
 │   ├── test_schema.py       # DNA Schema (17 tests)
-│   ├── test_materializer.py # Materializer (9 tests)
+│   ├── test_materializer.py # Materializer (16 tests) - includes security tests
 │   ├── test_assimilator.py  # Assimilator (6 tests)
 │   ├── test_genealogy.py    # Git memory (4 tests)
 │   └── test_auto_immune.py  # Auto-revert (3 tests)
@@ -573,6 +598,16 @@ tests/
         ├── TestCircuitBreaker      # Circuit open/close/cooldown
         ├── TestGoalSatisfaction    # Pattern matching, auto-satisfy
         └── TestConfigValidation    # Config bounds checking
+
+Security Tests (in test_materializer.py):
+├── TestMaterializerSecurity
+│   ├── test_path_traversal_double_dots_rejected
+│   ├── test_path_traversal_many_dots_rejected
+│   ├── test_invalid_identifier_rejected
+│   ├── test_empty_component_rejected
+│   ├── test_non_soma_prefix_rejected
+│   ├── test_just_soma_rejected
+│   └── test_valid_deep_nesting_accepted
 ```
 
 **Run tests:**

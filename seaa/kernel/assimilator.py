@@ -13,16 +13,21 @@ Single Responsibility:
 import importlib
 import importlib.util
 import inspect
+import re
 import sys
 import threading
 from typing import Callable, Any, Optional, Dict, List
 
 from seaa.core.logging import get_logger
+from seaa.core.config import config
 from seaa.core.exceptions import (
     ImportFailedError,
     ValidationFailedError,
     ActivationFailedError,
 )
+
+# Security: Strict module name pattern - only valid Python identifiers under soma.*
+MODULE_NAME_PATTERN = re.compile(r'^soma(\.[a-z_][a-z0-9_]*)+$', re.IGNORECASE)
 
 logger = get_logger("assimilator")
 
@@ -166,21 +171,74 @@ class Assimilator:
                 self._report_failure(module_name, "runtime", str(e))
                 raise ActivationFailedError(module_name, e)
     
+    def _validate_module_name(self, module_name: str) -> None:
+        """
+        SECURITY: Validate module name before import.
+
+        Only allows importing from soma.* with valid Python identifiers.
+
+        Raises:
+            ImportFailedError: If module name is invalid or potentially malicious
+        """
+        if not module_name or not isinstance(module_name, str):
+            raise ImportFailedError(
+                module_name,
+                Exception("Invalid module name: must be non-empty string")
+            )
+
+        # Only allow soma.* modules to be imported dynamically
+        if not module_name.startswith("soma."):
+            raise ImportFailedError(
+                module_name,
+                Exception(f"Security: Only soma.* modules can be dynamically imported, got: {module_name}")
+            )
+
+        # Check against strict pattern
+        if not MODULE_NAME_PATTERN.match(module_name):
+            raise ImportFailedError(
+                module_name,
+                Exception(
+                    f"Invalid module name format: '{module_name}'. "
+                    "Must match 'soma.<identifier>.<identifier>...' with valid Python identifiers."
+                )
+            )
+
+        # Additional check: no consecutive dots (path traversal attempt)
+        if ".." in module_name:
+            raise ImportFailedError(
+                module_name,
+                Exception(f"Security: Path traversal detected in module name: {module_name}")
+            )
+
+        # Check each part is a valid Python identifier
+        parts = module_name.split(".")
+        for part in parts:
+            if not part.isidentifier():
+                raise ImportFailedError(
+                    module_name,
+                    Exception(f"Invalid identifier '{part}' in module name: {module_name}")
+                )
+
     def _import_module(self, module_name: str) -> Any:
         """
         Import a module by name, with proper cache invalidation.
+
+        SECURITY: Validates module name before import to prevent arbitrary code execution.
         """
+        # SECURITY: Validate module name before any import operations
+        self._validate_module_name(module_name)
+
         # Invalidate cache for hot-reload support
         if module_name in sys.modules:
             del sys.modules[module_name]
-        
+
         # Also clear parent packages to ensure fresh import
         parts = module_name.split(".")
         for i in range(len(parts)):
             parent = ".".join(parts[:i+1])
             if parent in sys.modules:
                 del sys.modules[parent]
-        
+
         return importlib.import_module(module_name)
     
     def _handle_organ_error(self, module_name: str, error: Exception) -> None:

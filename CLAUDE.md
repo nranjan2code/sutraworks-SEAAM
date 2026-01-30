@@ -54,6 +54,10 @@ soma/                       # Evolved organs (SYSTEM-GENERATED)
 6. **Circuit Breaker**: Failing organs are auto-disabled after `max_attempts` failures
 7. **Resource Limits**: `max_concurrent_organs` and `max_total_organs` caps enforced
 8. **Config Validation**: Invalid configuration rejected at startup
+9. **Path Traversal Protection**: Module names are strictly validated to prevent directory escape
+10. **Module Name Validation**: Only `soma.*` with valid Python identifiers can be imported
+11. **DNA Integrity**: SHA-256 hash verification detects tampering
+12. **Prompt Injection Protection**: Error messages are sanitized before LLM prompts
 
 ## Common Tasks
 
@@ -112,7 +116,18 @@ handle.unsubscribe()
 from seaa.connectors.llm_gateway import ProviderGateway
 gateway = ProviderGateway()
 is_valid, error = gateway.validate_code(code, "module_name")
-# Checks: syntax, forbidden imports (pip, subprocess, eval), start() signature
+# Checks: syntax, forbidden imports (pip, subprocess, eval, ctypes, socket, pickle, etc.),
+#         star imports (from X import *), start() signature
+```
+
+### Module Name Validation
+```python
+from seaa.kernel.materializer import Materializer
+materializer = Materializer()
+# Module names must match: ^soma(\.[a-z_][a-z0-9_]*)+$
+# Path traversal attempts (e.g., "soma..seaa") are rejected
+materializer.materialize("soma.valid.name", code)  # OK
+materializer.materialize("soma..evil", code)  # Raises MaterializationError
 ```
 
 ### Circuit Breaker
@@ -181,6 +196,22 @@ The codebase was recently refactored for robustness:
 | Config Validation | ✅ | validate() method, startup checks |
 | Bug Fixes | ✅ | JSON cleaning, observer path, Py3.9 types |
 | Integration Tests | ✅ | 28 new tests for all features |
+
+### Security Hardening (Phase 3)
+
+| Vulnerability | Status | Fix |
+|---------------|--------|-----|
+| Path Traversal | ✅ | Regex validation + path canonicalization in materializer.py |
+| Module Injection | ✅ | Strict `soma.*` validation in assimilator.py |
+| LLM Response Injection | ✅ | Module name validation in architect.py |
+| Star Import Bypass | ✅ | `from X import *` detection in llm_gateway.py |
+| Prompt Injection | ✅ | Error message sanitization before LLM prompts |
+| Extended Forbidden Imports | ✅ | Added ctypes, socket, pickle, network modules |
+| JSON Extraction | ✅ | Proper depth tracking instead of brace matching |
+| Git Command Injection | ✅ | Config value validation in genealogy.py |
+| Log Path Traversal | ✅ | Allowlist-based path validation in journal.py |
+| DNA Tampering | ✅ | SHA-256 integrity verification in repository.py |
+| Security Tests | ✅ | 8 new tests for path traversal scenarios |
 
 ## Debugging Tips
 

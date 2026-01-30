@@ -95,18 +95,18 @@ soma/                           # 🫀 The Evolved Body
 
 ## Test Suite (`tests/`)
 
-Comprehensive testing with pytest - **81 tests total**.
+Comprehensive testing with pytest - **89 tests total**.
 
 ```
 tests/
 ├── __init__.py
 ├── conftest.py                 # Shared fixtures
 │
-├── unit/                       # Unit tests (53 tests)
+├── unit/                       # Unit tests (61 tests)
 │   ├── __init__.py
 │   ├── test_bus.py             # EventBus (12 tests)
 │   ├── test_schema.py          # DNA Schema (17 tests)
-│   ├── test_materializer.py    # Materializer (9 tests)
+│   ├── test_materializer.py    # Materializer (16 tests) - includes security tests
 │   ├── test_assimilator.py     # Assimilator (6 tests)
 │   ├── test_genealogy.py       # Git memory (4 tests)
 │   └── test_auto_immune.py     # Auto-revert (3 tests)
@@ -118,6 +118,16 @@ tests/
         ├── TestCircuitBreaker      # Open, close, cooldown
         ├── TestGoalSatisfaction    # Patterns, auto-satisfy
         └── TestConfigValidation    # Bounds, constraints
+
+Security Tests (test_materializer.py):
+├── TestMaterializerSecurity    # Path traversal, module validation
+    ├── test_path_traversal_double_dots_rejected
+    ├── test_path_traversal_many_dots_rejected
+    ├── test_invalid_identifier_rejected
+    ├── test_empty_component_rejected
+    ├── test_non_soma_prefix_rejected
+    ├── test_just_soma_rejected
+    └── test_valid_deep_nesting_accepted
 ```
 
 ### Running Tests
@@ -233,16 +243,16 @@ dev = [
 | **Config** | `seaa/core/config.py` | YAML + env variable configuration |
 | **Exceptions** | `seaa/core/exceptions.py` | Typed exception hierarchy |
 | **Schema** | `seaa/dna/schema.py` | DNA dataclass definitions |
-| **Repository** | `seaa/dna/repository.py` | Thread-safe DNA persistence |
+| **Repository** | `seaa/dna/repository.py` | Thread-safe DNA persistence + **integrity verification** |
 | **Genesis** | `seaa/kernel/genesis.py` | Slim orchestrator |
 | **EventBus** | `seaa/kernel/bus.py` | Async pub/sub messaging |
-| **Assimilator** | `seaa/kernel/assimilator.py` | Dynamic module loading |
-| **Materializer** | `seaa/kernel/materializer.py` | Atomic file writing |
+| **Assimilator** | `seaa/kernel/assimilator.py` | Dynamic module loading + **module validation** |
+| **Materializer** | `seaa/kernel/materializer.py` | Atomic file writing + **path traversal protection** |
 | **Immunity** | `seaa/kernel/immunity.py` | Error recovery & healing |
-| **Genealogy** | `seaa/kernel/genealogy.py` | Evolutionary memory & rollback |
-| **Architect** | `seaa/cortex/architect.py` | System designer |
+| **Genealogy** | `seaa/kernel/genealogy.py` | Evolutionary memory & rollback + **config validation** |
+| **Architect** | `seaa/cortex/architect.py` | System designer + **LLM response validation** |
 | **PromptLoader** | `seaa/cortex/prompt_loader.py` | YAML template management |
-| **LLMGateway** | `seaa/connectors/llm_gateway.py` | LLM provider abstraction |
+| **LLMGateway** | `seaa/connectors/llm_gateway.py` | LLM provider abstraction + **code validation & prompt sanitization** |
 
 ---
 
@@ -284,9 +294,9 @@ Genesis (orchestrator)
 |-----------|-------|----------|
 | EventBus | 12 | Subscribe, publish, async, unsubscribe, drain |
 | DNA Schema | 17 | Serialization, migration, all operations |
-| Materializer | 9 | Writes, protection, packages, atomic |
+| Materializer | 16 | Writes, protection, packages, atomic, **security** |
 | Assimilator | 6 | Loading, validation, batch |
 | Genealogy | 4 | Git init, commit, revert |
 | Auto-Immune | 3 | Revert triggers, failure handling |
 | **Integration** | **28** | Code validation, circuit breaker, goals, config |
-| **Total** | **81** | **All passing** |
+| **Total** | **89** | **All passing** |
