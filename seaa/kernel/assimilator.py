@@ -1,5 +1,5 @@
 """
-SEAAM Assimilator
+SEAA Assimilator
 
 Responsible for dynamically loading and activating evolved organs.
 
@@ -17,8 +17,8 @@ import sys
 import threading
 from typing import Callable, Any, Optional, Dict, List
 
-from seaam.core.logging import get_logger
-from seaam.core.exceptions import (
+from seaa.core.logging import get_logger
+from seaa.core.exceptions import (
     ImportFailedError,
     ValidationFailedError,
     ActivationFailedError,

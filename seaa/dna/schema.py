@@ -1,5 +1,5 @@
 """
-SEAAM DNA Schema
+SEAA DNA Schema
 
 Strongly-typed Pydantic models for DNA validation.
 Ensures data integrity and provides clear structure.
@@ -191,12 +191,12 @@ class DNAMetadata:
 @dataclass
 class DNA:
     """
-    The complete DNA structure for SEAAM.
+    The complete DNA structure for SEAA.
     
     This is the single source of truth for the organism's state.
     """
     system_version: str = "1.0.0"
-    system_name: str = "SEAAM"
+    system_name: str = "SEAA"
     blueprint: Dict[str, OrganBlueprint] = field(default_factory=dict)
     goals: List[Goal] = field(default_factory=list)
     active_modules: List[str] = field(default_factory=list)
@@ -249,7 +249,7 @@ class DNA:
         
         return cls(
             system_version=data.get("system_version", "1.0.0"),
-            system_name=data.get("system_name", "SEAAM"),
+            system_name=data.get("system_name", "SEAA"),
             blueprint=blueprint,
             goals=goals,
             active_modules=data.get("active_modules", []),
@@ -467,6 +467,6 @@ class DNA:
 
         return cls(
             system_version="1.0.0",
-            system_name="SEAAM-TabulaRasa",
+            system_name="SEAA-TabulaRasa",
             goals=parsed_goals,
         )

@@ -1,5 +1,5 @@
 """
-SEAAM - Self-Evolving Autonomous Agent Mesh
+Self-Evolving Autonomous Agent
 
 The code that writes itself.
 
@@ -14,14 +14,14 @@ from pathlib import Path
 # Ensure we can import from current directory
 sys.path.insert(0, str(Path(__file__).parent))
 
-from seaam.kernel import Genesis
-from seaam.core.logging import setup_logging, get_logger
+from seaa.kernel import Genesis
+from seaa.core.logging import setup_logging, get_logger
 
 
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="SEAAM - Self-Evolving Autonomous Agent Mesh"
+        description="Self-Evolving Autonomous Agent"
     )
     parser.add_argument(
         "--reset",
@@ -61,7 +61,7 @@ def reset_system():
     dna_path = Path("dna.json")
     tabula_rasa = {
         "system_version": "1.0.0",
-        "system_name": "SEAAM-TabulaRasa",
+        "system_name": "SEAA-TabulaRasa",
         "blueprint": {},
         "goals": [
             {"description": "I must be able to perceive the file system.", "priority": 1, "satisfied": False},

@@ -1,5 +1,5 @@
 """
-SEAAM Test Configuration
+SEAA Test Configuration
 
 Pytest fixtures and helpers for testing.
 """
@@ -27,7 +27,7 @@ def sample_dna_dict():
     """Sample DNA data in dictionary format."""
     return {
         "system_version": "1.0.0",
-        "system_name": "SEAAM-Test",
+        "system_name": "SEAA-Test",
         "blueprint": {
             "soma.perception.observer": {
                 "name": "soma.perception.observer",
@@ -62,7 +62,7 @@ def temp_dna_file(temp_dir, sample_dna_dict):
 def mock_llm_response():
     """Mock LLM response for code generation."""
     return '''
-from seaam.kernel.bus import bus, Event
+from seaa.kernel.bus import bus, Event
 
 class TestOrgan:
     def __init__(self):
@@ -94,7 +94,7 @@ def mock_gateway(mock_llm_response):
 @pytest.fixture
 def reset_event_bus():
     """Reset the EventBus singleton between tests."""
-    from seaam.kernel.bus import EventBus
+    from seaa.kernel.bus import EventBus
     EventBus.reset_instance()
     yield
     EventBus.reset_instance()
@@ -104,7 +104,7 @@ def reset_event_bus():
 def sample_organ_code():
     """Sample valid organ code."""
     return '''
-from seaam.kernel.bus import bus, Event
+from seaa.kernel.bus import bus, Event
 
 class SampleOrgan:
     def __init__(self):

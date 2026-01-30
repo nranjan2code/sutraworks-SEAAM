@@ -1,9 +1,9 @@
-# 📐 SEAAM Design Specification
+# 📐 SEAA Design Specification
 
-This document details the internal design patterns, data structures, and protocols that power SEAAM's self-evolution capabilities.
+This document details the internal design patterns, data structures, and protocols that power SEAA's self-evolution capabilities.
 
 <div align="center">
-  <img src="images/seaam_evolution_flow.png" alt="Evolution Flow" width="80%">
+  <img src="images/seaa_evolution_flow.png" alt="Evolution Flow" width="80%">
   <p><em>The Genesis Loop - OODA cycle for autonomous evolution</em></p>
 </div>
 
@@ -11,7 +11,7 @@ This document details the internal design patterns, data structures, and protoco
 
 ## 1. The Genesis Loop (OODA)
 
-The core driver of SEAAM is the **Genesis Loop**, an implementation of the OODA loop (Observe-Orient-Decide-Act) applied to autonomous software engineering.
+The core driver of SEAA is the **Genesis Loop**, an implementation of the OODA loop (Observe-Orient-Decide-Act) applied to autonomous software engineering.
 
 ```mermaid
 sequenceDiagram
@@ -76,7 +76,7 @@ This separation ensures:
 The DNA is the **single source of truth** for the organism. It persists across reboots and tracks the complete system state.
 
 <div align="center">
-  <img src="images/seaam_dna_structure.png" alt="DNA Structure" width="60%">
+  <img src="images/seaa_dna_structure.png" alt="DNA Structure" width="60%">
 </div>
 
 ### Current Schema (v1.1 - with Circuit Breaker & Measurable Goals)
@@ -124,7 +124,7 @@ The DNA is the **single source of truth** for the organism. It persists across r
   ],
   "metadata": {
     "system_version": "1.0.0",
-    "system_name": "SEAAM",
+    "system_name": "SEAA",
     "created_at": "2026-01-30T12:00:00Z",
     "last_modified": "2026-01-30T12:10:00Z",
     "total_evolutions": 3,
@@ -409,7 +409,7 @@ def validate_code(self, code: str, module_name: str) -> Tuple[bool, Optional[str
 
 ## 6. EventBus Design
 
-The EventBus (`seaam/kernel/bus.py`) uses a **pub/sub pattern** with async capabilities.
+The EventBus (`seaa/kernel/bus.py`) uses a **pub/sub pattern** with async capabilities.
 
 ### Event Structure
 
@@ -463,7 +463,7 @@ Prompts are externalized to YAML files for easy modification and versioning.
 ### Template Format
 
 ```yaml
-# seaam/cortex/prompts/architect_reflect.yaml
+# seaa/cortex/prompts/architect_reflect.yaml
 name: architect_reflect
 version: 2
 description: |
@@ -475,7 +475,7 @@ variables:
   - failures
   - already_tried
 template: |
-  You are SEAAM's Architect, the intelligent design system.
+  You are SEAA's Architect, the intelligent design system.
   
   ## Current Goals
   {{ goals }}
@@ -528,13 +528,13 @@ def render(self, **kwargs) -> str:
 
 ## 8. Configuration Design
 
-SEAAM uses a **layered configuration** system with type-safe dataclasses.
+SEAA uses a **layered configuration** system with type-safe dataclasses.
 
 ### Configuration Hierarchy
 
 ```
 Priority (highest to lowest):
-1. Environment variables (SEAAM_*)
+1. Environment variables (SEAA_*)
 2. config.yaml
 3. Built-in defaults
 ```
@@ -566,10 +566,10 @@ class CircuitBreakerConfig:
 class SecurityConfig:
     allow_pip_install: bool = False  # Disabled by default
     allowed_pip_packages: List[str] = field(default_factory=list)
-    protected_prefixes: List[str] = field(default_factory=lambda: ["seaam."])
+    protected_prefixes: List[str] = field(default_factory=lambda: ["seaa."])
 
 @dataclass
-class SEAAMConfig:
+class SEAAConfig:
     llm: LLMConfig
     paths: PathsConfig
     metabolism: MetabolismConfig
@@ -604,7 +604,7 @@ class Genesis:
 
 ## 9. Error Handling Strategy
 
-SEAAM uses a typed exception hierarchy for precise error handling.
+SEAA uses a typed exception hierarchy for precise error handling.
 
 ### Exception Categories
 
@@ -638,7 +638,7 @@ except ActivationFailedError as e:
 
 ## 10. Thread Safety
 
-SEAAM is designed to be **thread-safe** where concurrent access occurs.
+SEAA is designed to be **thread-safe** where concurrent access occurs.
 
 ### Protected Resources
 
@@ -685,5 +685,5 @@ class OrganThread(threading.Thread):
 
 **Production (JSON):**
 ```json
-{"timestamp":"2026-01-30T14:32:15Z","level":"INFO","logger":"seaam.genesis","message":"System awakening","version":"1.0.0"}
+{"timestamp":"2026-01-30T14:32:15Z","level":"INFO","logger":"seaa.genesis","message":"System awakening","version":"1.0.0"}
 ```

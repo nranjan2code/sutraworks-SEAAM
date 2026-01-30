@@ -1,5 +1,5 @@
 """
-SEAAM Prompt Loader
+SEAA Prompt Loader
 
 Loads and renders prompt templates from YAML files.
 
@@ -14,8 +14,8 @@ import json
 from pathlib import Path
 from typing import Any, Optional, Union, List, Dict
 
-from seaam.core.logging import get_logger
-from seaam.core.config import config
+from seaa.core.logging import get_logger
+from seaa.core.config import config
 
 logger = get_logger("prompt_loader")
 

@@ -4,8 +4,8 @@ Unit tests for the Materializer
 
 import pytest
 from pathlib import Path
-from seaam.kernel.materializer import Materializer
-from seaam.core.exceptions import KernelProtectionError, MaterializationError
+from seaa.kernel.materializer import Materializer
+from seaa.core.exceptions import KernelProtectionError, MaterializationError
 
 
 class TestMaterializer:
@@ -37,11 +37,11 @@ class TestMaterializer:
         assert (temp_dir / "soma" / "deep" / "nested" / "organ.py").exists()
     
     def test_kernel_protection(self, temp_dir, sample_organ_code):
-        """Test that seaam.* modules are protected."""
+        """Test that seaa.* modules are protected."""
         materializer = Materializer(root_dir=temp_dir)
         
         with pytest.raises(KernelProtectionError):
-            materializer.materialize("seaam.kernel.bus", sample_organ_code)
+            materializer.materialize("seaa.kernel.bus", sample_organ_code)
     
     def test_soma_prefix_required(self, temp_dir, sample_organ_code):
         """Test that non-soma modules are rejected."""

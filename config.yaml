@@ -1,4 +1,4 @@
-# SEAAM Configuration
+# SEAA Configuration
 # This file configures the self-evolving system
 
 version: "1.0.0"
@@ -30,8 +30,8 @@ circuit_breaker:
 
 genealogy:
   enabled: true
-  user_name: "SEAAM Genesis"
-  user_email: "genesis@seaam.internal"
+  user_name: "SEAA Genesis"
+  user_email: "genesis@seaa.internal"
 
 security:
   # IMPORTANT: Disabled by default for security
@@ -47,4 +47,4 @@ security:
 logging:
   level: DEBUG
   format: colored  # 'colored' for dev, 'json' for production
-  # file: ./logs/seaam.log  # Uncomment to enable file logging
+  # file: ./logs/seaa.log  # Uncomment to enable file logging

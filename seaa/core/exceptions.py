@@ -1,12 +1,12 @@
 """
-SEAAM Custom Exceptions
+SEAA Custom Exceptions
 
 Typed exception hierarchy for proper error handling and classification.
 """
 
 from typing import Optional
-class SEAAMError(Exception):
-    """Base exception for all SEAAM errors."""
+class SEAAError(Exception):
+    """Base exception for all SEAA errors."""
     
     def __init__(self, message: str, context: Optional[dict] = None):
         super().__init__(message)
@@ -20,7 +20,7 @@ class SEAAMError(Exception):
 
 
 # DNA Errors
-class DNAError(SEAAMError):
+class DNAError(SEAAError):
     """Errors related to DNA loading, saving, or validation."""
     pass
 
@@ -41,7 +41,7 @@ class DNACorruptedError(DNAError):
 
 
 # Evolution Errors
-class EvolutionError(SEAAMError):
+class EvolutionError(SEAAError):
     """Errors during the evolution/code generation process."""
     pass
 
@@ -62,7 +62,7 @@ class MaterializationError(EvolutionError):
 
 
 # Assimilation Errors
-class AssimilationError(SEAAMError):
+class AssimilationError(SEAAError):
     """Errors during module loading and activation."""
     pass
 
@@ -104,7 +104,7 @@ class ActivationFailedError(AssimilationError):
 
 
 # Immunity/Healing Errors
-class ImmunityError(SEAAMError):
+class ImmunityError(SEAAError):
     """Errors during the healing/recovery process."""
     pass
 
@@ -126,7 +126,7 @@ class KernelProtectionError(ImmunityError):
 
 
 # LLM/Gateway Errors
-class GatewayError(SEAAMError):
+class GatewayError(SEAAError):
     """Errors communicating with LLM providers."""
     pass
 

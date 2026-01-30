@@ -1,6 +1,6 @@
 # 📖 API Reference
 
-Complete API documentation for SEAAM internal modules.
+Complete API documentation for SEAA internal modules.
 
 ---
 
@@ -16,12 +16,12 @@ Complete API documentation for SEAAM internal modules.
 
 ## Core Module
 
-Located in `seaam/core/`
+Located in `seaa/core/`
 
-### Logging (`seaam.core.logging`)
+### Logging (`seaa.core.logging`)
 
 ```python
-from seaam.core.logging import get_logger, setup_logging, LogContext
+from seaa.core.logging import get_logger, setup_logging, LogContext
 ```
 
 #### `get_logger(name: str) -> logging.Logger`
@@ -36,7 +36,7 @@ logger.info("Hello world")
 
 #### `setup_logging(level: str, format_type: str, log_file: Optional[str]) -> None`
 
-Configure the root SEAAM logger.
+Configure the root SEAA logger.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -45,7 +45,7 @@ Configure the root SEAAM logger.
 | `log_file` | Optional[str] | None | Optional file path for logs |
 
 ```python
-setup_logging(level="DEBUG", format_type="json", log_file="seaam.log")
+setup_logging(level="DEBUG", format_type="json", log_file="seaa.log")
 ```
 
 #### `LogContext`
@@ -60,10 +60,10 @@ with LogContext(logger, request_id="abc123", user="admin"):
 
 ---
 
-### Configuration (`seaam.core.config`)
+### Configuration (`seaa.core.config`)
 
 ```python
-from seaam.core.config import config, SEAAMConfig
+from seaa.core.config import config, SEAAConfig
 ```
 
 #### `config` (Global Instance)
@@ -77,7 +77,7 @@ allow_pip = config.security.allow_pip_install
 log_level = config.logging.level
 ```
 
-#### `SEAAMConfig`
+#### `SEAAConfig`
 
 Configuration dataclass with nested config objects.
 
@@ -92,7 +92,7 @@ Configuration dataclass with nested config objects.
 
 ```python
 # Load custom configuration
-custom_config = SEAAMConfig.load("custom.yaml")
+custom_config = SEAAConfig.load("custom.yaml")
 
 # Access nested config
 print(custom_config.llm.model)
@@ -108,11 +108,11 @@ if errors:
 
 ---
 
-### Exceptions (`seaam.core.exceptions`)
+### Exceptions (`seaa.core.exceptions`)
 
 ```python
-from seaam.core.exceptions import (
-    SEAAMError,
+from seaa.core.exceptions import (
+    SEAAError,
     DNAError,
     DNAValidationError,
     EvolutionError,
@@ -125,7 +125,7 @@ from seaam.core.exceptions import (
 )
 ```
 
-All exceptions inherit from `SEAAMError` and support context:
+All exceptions inherit from `SEAAError` and support context:
 
 ```python
 raise DNAValidationError("Invalid goal format", context={"goal": goal_data})
@@ -135,12 +135,12 @@ raise DNAValidationError("Invalid goal format", context={"goal": goal_data})
 
 ## DNA Module
 
-Located in `seaam/dna/`
+Located in `seaa/dna/`
 
-### Schema (`seaam.dna.schema`)
+### Schema (`seaa.dna.schema`)
 
 ```python
-from seaam.dna.schema import (
+from seaa.dna.schema import (
     DNA,
     Goal,
     OrganBlueprint,
@@ -202,7 +202,7 @@ dna = DNA.from_dict(data)
 Goal dataclass with optional measurable criteria.
 
 ```python
-from seaam.dna.schema import Goal
+from seaa.dna.schema import Goal
 
 goal = Goal(
     description="I must perceive the file system.",
@@ -226,10 +226,10 @@ Enum for classifying failure types.
 
 ---
 
-### Repository (`seaam.dna.repository`)
+### Repository (`seaa.dna.repository`)
 
 ```python
-from seaam.dna.repository import DNARepository
+from seaa.dna.repository import DNARepository
 ```
 
 #### `DNARepository`
@@ -256,12 +256,12 @@ backup_path = repo.backup()
 
 ## Kernel Module
 
-Located in `seaam/kernel/`
+Located in `seaa/kernel/`
 
-### EventBus (`seaam.kernel.bus`)
+### EventBus (`seaa.kernel.bus`)
 
 ```python
-from seaam.kernel.bus import (
+from seaa.kernel.bus import (
     EventBus,
     Event,
     bus,           # Global singleton
@@ -320,10 +320,10 @@ publish(Event(event_type="my.event", data="hello"))
 
 ---
 
-### Assimilator (`seaam.kernel.assimilator`)
+### Assimilator (`seaa.kernel.assimilator`)
 
 ```python
-from seaam.kernel.assimilator import Assimilator
+from seaa.kernel.assimilator import Assimilator
 ```
 
 #### `Assimilator`
@@ -357,10 +357,10 @@ results = assimilator.integrate_batch([
 
 ---
 
-### Materializer (`seaam.kernel.materializer`)
+### Materializer (`seaa.kernel.materializer`)
 
 ```python
-from seaam.kernel.materializer import Materializer
+from seaa.kernel.materializer import Materializer
 ```
 
 #### `Materializer`
@@ -393,10 +393,10 @@ deleted = materializer.delete("soma.perception.observer")
 
 ---
 
-### Immunity (`seaam.kernel.immunity`)
+### Immunity (`seaa.kernel.immunity`)
 
 ```python
-from seaam.kernel.immunity import Immunity, DependencyClassification
+from seaa.kernel.immunity import Immunity, DependencyClassification
 ```
 
 #### `Immunity`
@@ -427,10 +427,10 @@ healed = immunity.heal("watchdog")
 
 ---
 
-### Genesis (`seaam.kernel.genesis`)
+### Genesis (`seaa.kernel.genesis`)
 
 ```python
-from seaam.kernel.genesis import Genesis
+from seaa.kernel.genesis import Genesis
 ```
 
 #### `Genesis`
@@ -454,12 +454,12 @@ genesis.shutdown()
 
 ## Cortex Module
 
-Located in `seaam/cortex/`
+Located in `seaa/cortex/`
 
-### Prompt Loader (`seaam.cortex.prompt_loader`)
+### Prompt Loader (`seaa.cortex.prompt_loader`)
 
 ```python
-from seaam.cortex.prompt_loader import prompt_loader, PromptLoader, PromptTemplate
+from seaa.cortex.prompt_loader import prompt_loader, PromptLoader, PromptTemplate
 ```
 
 #### `prompt_loader` (Global Instance)
@@ -498,10 +498,10 @@ loader.clear_cache()
 
 ---
 
-### Architect (`seaam.cortex.architect`)
+### Architect (`seaa.cortex.architect`)
 
 ```python
-from seaam.cortex.architect import Architect
+from seaa.cortex.architect import Architect
 ```
 
 #### `Architect`
@@ -524,12 +524,12 @@ proposals = architect.reflect(dna)
 
 ## Connectors Module
 
-Located in `seaam/connectors/`
+Located in `seaa/connectors/`
 
-### LLM Gateway (`seaam.connectors.llm_gateway`)
+### LLM Gateway (`seaa.connectors.llm_gateway`)
 
 ```python
-from seaam.connectors.llm_gateway import ProviderGateway
+from seaa.connectors.llm_gateway import ProviderGateway
 ```
 
 #### `ProviderGateway`

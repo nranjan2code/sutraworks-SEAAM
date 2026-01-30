@@ -1,5 +1,5 @@
 """
-SEAAM Event Bus (Nervous System)
+SEAA Event Bus (Nervous System)
 
 A robust, async-capable event bus that serves as the central
 communication mechanism between organs.
@@ -24,7 +24,7 @@ from uuid import uuid4
 from dataclasses import dataclass, field
 from enum import Enum
 
-from seaam.core.logging import get_logger
+from seaa.core.logging import get_logger
 
 logger = get_logger("bus")
 

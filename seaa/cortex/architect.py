@@ -1,5 +1,5 @@
 """
-SEAAM Architect - The Mind
+SEAA Architect - The Mind
 
 The intelligent agent responsible for system design.
 Uses externalized prompt templates for flexibility.
@@ -13,17 +13,17 @@ Responsibilities:
 import json
 from typing import Callable, Optional
 
-from seaam.core.logging import get_logger
-from seaam.core.config import config
-from seaam.dna.schema import DNA, Goal
-from seaam.cortex.prompt_loader import prompt_loader
+from seaa.core.logging import get_logger
+from seaa.core.config import config
+from seaa.dna.schema import DNA, Goal
+from seaa.cortex.prompt_loader import prompt_loader
 
 logger = get_logger("architect")
 
 
 class Architect:
     """
-    The Mind of SEAAM.
+    The Mind of SEAA.
     
     Analyzes the current system state and designs the next evolution step.
     """

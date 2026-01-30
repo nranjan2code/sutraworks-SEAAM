@@ -1,46 +1,30 @@
 {
   "system_version": "1.0.0",
-  "system_name": "SEAAM-TabulaRasa",
+  "system_name": "SEAA-TabulaRasa",
   "blueprint": {
     "soma.perception.observer": {
       "name": "soma.perception.observer",
-      "description": "This organ will be responsible for monitoring and observing changes in the file system. It will periodically scan the file system, detect new files, modified files, and deleted files, and publish these events to the event bus. The observer will also handle any exceptions that occur during scanning and log them appropriately.",
+      "description": "This organ will be responsible for scanning and analyzing the file system. It will periodically check for changes, identify new or modified files, and publish events containing information about these changes to the event bus. The observer will use Python's built-in libraries such as `os` and `watchdog` to monitor directories and files. When a change is detected, it will create an event with details like file path, type of change (created, modified, deleted), and time stamp, and publish this event using the Event Bus API.",
       "dependencies": [],
-      "version": 3,
-      "created_at": "2026-01-29T20:38:48.988779Z",
-      "updated_at": "2026-01-29T20:43:38.592420Z"
+      "version": 1,
+      "created_at": "2026-01-30T05:22:40.905490Z",
+      "updated_at": "2026-01-30T05:22:40.905503Z"
     },
     "soma.memory.journal": {
       "name": "soma.memory.journal",
-      "description": "Critical system component required by other organs. This organ was discovered as a missing dependency (original: soma.memory.journal). Implement it with a global start() function.",
+      "description": "This organ will be responsible for maintaining a persistent memory of file system events. It will subscribe to events published by the 'soma.perception.observer' and store relevant information about each event in a structured format, such as a database or log file. The journal will ensure that all changes detected by the observer are recorded, allowing the system to have a historical view of the file system state. This organ will use Python's built-in libraries for logging and configuration management to handle data persistence and retrieval.",
       "dependencies": [],
-      "version": 2,
-      "created_at": "2026-01-29T20:39:35.789151Z",
-      "updated_at": "2026-01-29T20:42:51.528066Z"
+      "version": 1,
+      "created_at": "2026-01-30T05:23:33.166499Z",
+      "updated_at": "2026-01-30T05:23:33.166514Z"
     },
     "soma.visualization.dashboard": {
       "name": "soma.visualization.dashboard",
-      "description": "Critical system component required by other organs. This organ was discovered as a missing dependency (original: soma.visualization.dashboard). Implement it with a global start() function.",
-      "dependencies": [],
-      "version": 2,
-      "created_at": "2026-01-29T20:40:23.280397Z",
-      "updated_at": "2026-01-29T20:42:51.531475Z"
-    },
-    "soma.analysis.learning": {
-      "name": "soma.analysis.learning",
-      "description": "Critical system component required by other organs. This organ was discovered as a missing dependency (original: soma.analysis.learning). Implement it with a global start() function.",
-      "dependencies": [],
-      "version": 2,
-      "created_at": "2026-01-29T20:41:13.429060Z",
-      "updated_at": "2026-01-29T20:42:51.535581Z"
-    },
-    "soma.analysis.prediction": {
-      "name": "soma.analysis.prediction",
-      "description": "The prediction organ will be responsible for integrating advanced predictive analytics to provide proactive recommendations for system maintenance and optimization based on file system trends. It will subscribe to insights and predictions published by the learning organ, process these insights to extract relevant information, apply predictive models to forecast future changes, and generate actionable recommendations. The prediction organ will publish recommendations back to the event bus for further action or visualization by other organs such as the dashboard.",
+      "description": "This organ will be responsible for providing a visual dashboard that displays real-time and historical data about the file system changes. It will subscribe to events published by the 'soma.memory.journal' and use this information to update the dashboard in real-time. The dashboard will provide an interface where users can view file paths, types of changes, timestamps, and other relevant metrics. This organ will utilize Python's web framework libraries such as Flask or Django to create a RESTful API that serves the dashboard frontend. The frontend can be built using HTML/CSS/JavaScript frameworks like React or Angular to provide a dynamic and interactive user experience.",
       "dependencies": [],
       "version": 1,
-      "created_at": "2026-01-29T20:42:03.179790Z",
-      "updated_at": "2026-01-29T20:42:03.179799Z"
+      "created_at": "2026-01-30T05:24:20.083886Z",
+      "updated_at": "2026-01-30T05:24:20.083901Z"
     }
   },
   "goals": [
@@ -48,67 +32,33 @@
       "description": "I must be able to perceive the file system.",
       "priority": 1,
       "satisfied": false,
-      "created_at": "2026-01-29T20:38:26.967353Z"
+      "created_at": "2026-01-30T05:22:12.860331Z",
+      "required_organs": []
     },
     {
       "description": "I must have a memory.",
       "priority": 1,
       "satisfied": false,
-      "created_at": "2026-01-29T20:38:26.967624Z"
+      "created_at": "2026-01-30T05:22:12.860565Z",
+      "required_organs": []
     },
     {
       "description": "I must have a visual dashboard.",
       "priority": 2,
       "satisfied": false,
-      "created_at": "2026-01-29T20:38:26.967626Z"
-    },
-    {
-      "description": "Optional: Integrate machine learning algorithms to analyze trends and anomalies in the file system data, enabling predictive insights.",
-      "priority": 1,
-      "satisfied": false,
-      "created_at": "2026-01-29T20:40:23.280195Z"
-    },
-    {
-      "description": "Integrate advanced predictive analytics to provide proactive recommendations for system maintenance and optimization based on file system trends.",
-      "priority": 1,
-      "satisfied": false,
-      "created_at": "2026-01-29T20:41:13.429010Z"
+      "created_at": "2026-01-30T05:22:12.860568Z",
+      "required_organs": []
     }
   ],
   "active_modules": [
-    "soma.analysis.prediction",
-    "soma.perception.observer"
+    "soma.perception.observer",
+    "soma.memory.journal"
   ],
-  "failures": [
-    {
-      "module_name": "soma.memory.journal",
-      "error_type": "import",
-      "error_message": "No module named 'soma.memory'",
-      "timestamp": "2026-01-29T20:42:51.526773Z",
-      "attempt_count": 1,
-      "context": {}
-    },
-    {
-      "module_name": "soma.visualization.dashboard",
-      "error_type": "import",
-      "error_message": "No module named 'soma.visualization'",
-      "timestamp": "2026-01-29T20:42:51.530032Z",
-      "attempt_count": 1,
-      "context": {}
-    },
-    {
-      "module_name": "soma.analysis.learning",
-      "error_type": "import",
-      "error_message": "No module named 'soma.analysis.learning'",
-      "timestamp": "2026-01-29T20:42:51.534491Z",
-      "attempt_count": 1,
-      "context": {}
-    }
-  ],
+  "failures": [],
   "metadata": {
-    "last_modified": "2026-01-29T20:44:16.072701Z",
-    "total_evolutions": 6,
-    "total_failures": 4,
-    "last_successful_organ": "soma.perception.observer"
+    "last_modified": "2026-01-30T05:24:20.085459Z",
+    "total_evolutions": 2,
+    "total_failures": 0,
+    "last_successful_organ": "soma.memory.journal"
   }
 }

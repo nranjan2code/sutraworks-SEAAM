@@ -1,5 +1,5 @@
 """
-SEAAM Genealogy - Evolutionary Memory
+SEAA Genealogy - Evolutionary Memory
 
 Responsible for maintaining the history of the SOMA (body) using Git.
 This allows the system to:
@@ -16,8 +16,8 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional, Dict, Union
 
-from seaam.core.logging import get_logger
-from seaam.core.config import config
+from seaa.core.logging import get_logger
+from seaa.core.config import config
 
 logger = get_logger("genealogy")
 

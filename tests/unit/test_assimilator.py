@@ -7,8 +7,8 @@ import sys
 import time
 import threading
 from pathlib import Path
-from seaam.kernel.assimilator import Assimilator
-from seaam.core.exceptions import ValidationFailedError, ImportFailedError
+from seaa.kernel.assimilator import Assimilator
+from seaa.core.exceptions import ValidationFailedError, ImportFailedError
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def valid_organ_module(temp_dir):
     (soma_dir / "__init__.py").write_text("# Test package\n")
     
     organ_code = '''
-from seaam.kernel.bus import bus, Event
+from seaa.kernel.bus import bus, Event
 
 class ValidOrgan:
     def __init__(self):

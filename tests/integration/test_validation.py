@@ -1,5 +1,5 @@
 """
-Integration tests for SEAAM refactored features.
+Integration tests for SEAA refactored features.
 
 Tests:
 - Code validation (syntax, forbidden imports, start() signature)
@@ -11,9 +11,9 @@ Tests:
 import pytest
 from datetime import datetime, timedelta
 
-from seaam.connectors.llm_gateway import ProviderGateway
-from seaam.dna.schema import DNA, Goal, Failure, FailureType
-from seaam.core.config import SEAAMConfig, LLMConfig, MetabolismConfig, CircuitBreakerConfig
+from seaa.connectors.llm_gateway import ProviderGateway
+from seaa.dna.schema import DNA, Goal, Failure, FailureType
+from seaa.core.config import SEAAConfig, LLMConfig, MetabolismConfig, CircuitBreakerConfig
 
 
 class TestCodeValidation:
@@ -111,7 +111,7 @@ def start(optional_arg=None):
     def test_valid_code_accepted(self, gateway):
         """Valid code with proper start() should be accepted."""
         code = """
-from seaam.kernel.bus import bus, Event
+from seaa.kernel.bus import bus, Event
 
 class MyOrgan:
     def __init__(self):
@@ -277,34 +277,34 @@ class TestConfigValidation:
 
     def test_valid_config_passes(self):
         """Valid configuration should pass validation."""
-        config = SEAAMConfig()
+        config = SEAAConfig()
         errors = config.validate()
         assert errors == []
 
     def test_invalid_temperature_rejected(self):
         """Temperature outside 0-2 should be rejected."""
-        config = SEAAMConfig()
+        config = SEAAConfig()
         config.llm.temperature = 3.0
         errors = config.validate()
         assert any("temperature" in e.lower() for e in errors)
 
     def test_negative_temperature_rejected(self):
         """Negative temperature should be rejected."""
-        config = SEAAMConfig()
+        config = SEAAConfig()
         config.llm.temperature = -0.5
         errors = config.validate()
         assert any("temperature" in e.lower() for e in errors)
 
     def test_short_timeout_rejected(self):
         """Too short timeout should be rejected."""
-        config = SEAAMConfig()
+        config = SEAAConfig()
         config.llm.timeout_seconds = 5
         errors = config.validate()
         assert any("timeout" in e.lower() for e in errors)
 
     def test_invalid_resource_limits_rejected(self):
         """max_total_organs < max_concurrent_organs should be rejected."""
-        config = SEAAMConfig()
+        config = SEAAConfig()
         config.metabolism.max_total_organs = 10
         config.metabolism.max_concurrent_organs = 20
         errors = config.validate()
@@ -312,21 +312,21 @@ class TestConfigValidation:
 
     def test_zero_max_organs_per_cycle_rejected(self):
         """Zero organs per cycle should be rejected."""
-        config = SEAAMConfig()
+        config = SEAAConfig()
         config.metabolism.max_organs_per_cycle = 0
         errors = config.validate()
         assert any("max_organs_per_cycle" in e for e in errors)
 
     def test_zero_circuit_breaker_attempts_rejected(self):
         """Zero circuit breaker attempts should be rejected."""
-        config = SEAAMConfig()
+        config = SEAAConfig()
         config.circuit_breaker.max_attempts = 0
         errors = config.validate()
         assert any("max_attempts" in e for e in errors)
 
     def test_zero_retries_rejected(self):
         """Zero LLM retries should be rejected."""
-        config = SEAAMConfig()
+        config = SEAAConfig()
         config.llm.max_retries = 0
         errors = config.validate()
         assert any("max_retries" in e for e in errors)

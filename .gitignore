@@ -11,7 +11,7 @@ venv/
 # MacOS
 .DS_Store
 
-# SEAAM Runtime Generation (Soma)
+# SEAA Runtime Generation (Soma)
 # Evolved code is kept in the soma/ directory and ignored from version control.
 soma/
 events.log
@@ -19,8 +19,8 @@ memory_journal.json
 
 # Keep empty init files if needed, but the system creates folders.
 # We explicitly want to preserve the Kernel and Cortex.
-# seaam/kernel/ is tracked.
-# seaam/cortex/ is tracked.
+# seaa/kernel/ is tracked.
+# seaa/cortex/ is tracked.
 dna.json
 .dna_backups/
 .pytest_cache/

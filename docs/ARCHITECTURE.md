@@ -1,9 +1,9 @@
 # 🧬 System Architecture
 
-SEAAM is fundamentally different from traditional software architectures. Instead of a static codebase, it is a **dynamic biological system** designed to grow, heal, and evolve autonomously.
+SEAA is fundamentally different from traditional software architectures. Instead of a static codebase, it is a **dynamic biological system** designed to grow, heal, and evolve autonomously.
 
 <div align="center">
-  <img src="images/seaam_architecture_clean.png" alt="SEAAM Architecture" width="70%">
+  <img src="images/seaa_architecture_clean.png" alt="SEAA Architecture" width="70%">
 </div>
 
 ---
@@ -16,7 +16,7 @@ graph TD
     Interface -->|Events| Bus[Nervous System]
     Bus -->|Events| Memory[Memory Organ]
     
-    subgraph KERNEL [The Immutable Seed - seaam/kernel/]
+    subgraph KERNEL [The Immutable Seed - seaa/kernel/]
         Genesis[Genesis Orchestrator]
         Bus
         Assimilator[Assimilator]
@@ -25,7 +25,7 @@ graph TD
         Genealogy[Genealogy (Git)]
     end
     
-    subgraph CORTEX [The Mind - seaam/cortex/]
+    subgraph CORTEX [The Mind - seaa/cortex/]
         Architect[Architect] -->|Reflects| DNA[(DNA.json)]
         Architect -->|Uses| PromptLoader[Prompt Loader]
         PromptLoader -->|Loads| Prompts[YAML Templates]
@@ -37,7 +37,7 @@ graph TD
         Interface
     end
     
-    subgraph CONNECTORS [External - seaam/connectors/]
+    subgraph CONNECTORS [External - seaa/connectors/]
         Gateway[LLM Gateway]
         Gateway -->|Ollama| Ollama[Local LLM]
         Gateway -->|Gemini| Gemini[Cloud LLM]
@@ -55,7 +55,7 @@ graph TD
 
 ---
 
-## 1. The Kernel (`seaam/kernel/`)
+## 1. The Kernel (`seaa/kernel/`)
 
 The Kernel is the **immutable core**—it enables life but does not dictate form. It cannot be modified by the system itself.
 
@@ -91,7 +91,7 @@ class Genesis:
 An **async-capable EventBus** that serves as the central communication mechanism.
 
 <div align="center">
-  <img src="images/seaam_event_bus.png" alt="EventBus Pattern" width="50%">
+  <img src="images/seaa_event_bus.png" alt="EventBus Pattern" width="50%">
 </div>
 
 **Features:**
@@ -106,7 +106,7 @@ An **async-capable EventBus** that serves as the central communication mechanism
 
 ```python
 # Usage example
-from seaam.kernel.bus import bus, subscribe, publish, Event
+from seaa.kernel.bus import bus, subscribe, publish, Event
 
 # Subscribe to events
 handle = subscribe("organ.started", lambda e: print(f"Started: {e.data}"))
@@ -151,7 +151,7 @@ Writes generated organ code to the filesystem with **safety guarantees**.
 **Features:**
 - **Atomic Writes**: Write to temp file, then rename (prevents corruption)
 - **Package Structure**: Auto-creates `__init__.py` in all directories
-- **Kernel Protection**: Cannot write to `seaam/*` paths
+- **Kernel Protection**: Cannot write to `seaa/*` paths
 
 ```python
 class Materializer:
@@ -172,7 +172,7 @@ The healing system for **dependency resolution** and error classification.
 flowchart TD
     A[Missing Import] --> B{Starts with soma.?}
     B -->|Yes| C[Internal Organ\nRequest Evolution]
-    B -->|No| D{Starts with seaam.?}
+    B -->|No| D{Starts with seaa.?}
     D -->|Yes| E[Seed Error\nCannot Self-Heal]
     D -->|No| F{Known External?}
     F -->|Yes| G[pip install\nif allowed]
@@ -186,7 +186,7 @@ flowchart TD
 
 ---
 
-## 2. The Cortex (`seaam/cortex/`)
+## 2. The Cortex (`seaa/cortex/`)
 
 The Cortex is the **intelligent reasoning layer**.
 
@@ -227,13 +227,13 @@ Loads and renders **YAML prompt templates** with simple variable substitution.
 
 **Template Format:**
 ```yaml
-# seaam/cortex/prompts/architect_reflect.yaml
+# seaa/cortex/prompts/architect_reflect.yaml
 name: architect_reflect
 version: 2
 description: System reflection and design prompt
 variables: [goals, blueprint, failures]
 template: |
-  You are SEAAM's Architect. Analyze the current system state:
+  You are SEAA's Architect. Analyze the current system state:
   
   ## Goals
   {{ goals }}
@@ -249,7 +249,7 @@ template: |
 
 ---
 
-## 3. The Connectors (`seaam/connectors/`)
+## 3. The Connectors (`seaa/connectors/`)
 
 ### `llm_gateway.py` - LLM Provider Abstraction
 
@@ -311,7 +311,7 @@ class ProviderGateway:
 
 ---
 
-## 4. The DNA (`seaam/dna/`)
+## 4. The DNA (`seaa/dna/`)
 
 The DNA is the **persistent memory** of the organism.
 
@@ -379,7 +379,7 @@ Thread-safe DNA persistence with **atomic writes and backups**.
 
 ---
 
-## 5. The Core (`seaam/core/`)
+## 5. The Core (`seaa/core/`)
 
 Foundational infrastructure used throughout the system.
 
@@ -393,7 +393,7 @@ Production-ready logging with **two formats**:
 | `json` | Production | Machine-parseable JSON |
 
 ```python
-from seaam.core.logging import get_logger
+from seaa.core.logging import get_logger
 
 logger = get_logger("genesis")
 logger.info("System awakening", cycles=0, organs=5)
@@ -406,7 +406,7 @@ Layered configuration with **priority system**:
 1. Built-in defaults → 2. `config.yaml` → 3. Environment variables
 
 ```python
-from seaam.core.config import config
+from seaa.core.config import config
 
 # Access configuration
 model = config.llm.model
@@ -416,7 +416,7 @@ allow_pip = config.security.allow_pip_install
 ### `exceptions.py` - Typed Exception Hierarchy
 
 ```
-SEAAMError (base)
+SEAAError (base)
 ├── DNAError
 │   ├── DNAValidationError
 │   ├── DNANotFoundError
@@ -529,11 +529,11 @@ sequenceDiagram
 
 ## 8. Security Model
 
-SEAAM follows a **security-first** design:
+SEAA follows a **security-first** design:
 
 | Protection | Mechanism |
 |------------|-----------|
-| Kernel Immutability | Materializer rejects writes to `seaam/*` |
+| Kernel Immutability | Materializer rejects writes to `seaa/*` |
 | Code Validation | AST-based syntax + forbidden import checking |
 | Forbidden Imports | `pip`, `subprocess`, `os.system`, `eval`, `exec` blocked |
 | Pip Disabled | `allow_pip_install: false` by default |

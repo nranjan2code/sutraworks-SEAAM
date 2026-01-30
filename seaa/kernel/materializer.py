@@ -1,5 +1,5 @@
 """
-SEAAM Materializer
+SEAA Materializer
 
 Responsible for writing generated code to the filesystem.
 
@@ -15,9 +15,9 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Optional, Union, List
 
-from seaam.core.logging import get_logger
-from seaam.core.config import config
-from seaam.core.exceptions import (
+from seaa.core.logging import get_logger
+from seaa.core.config import config
+from seaa.core.exceptions import (
     MaterializationError,
     KernelProtectionError,
 )
@@ -30,7 +30,7 @@ class Materializer:
     The Materializer writes generated organ code to the filesystem.
     
     It enforces:
-    - Kernel protection (cannot overwrite seaam.* modules)
+    - Kernel protection (cannot overwrite seaa.* modules)
     - Proper package structure (creates __init__.py files)
     - Atomic writes (prevents partial file corruption)
     """
@@ -118,7 +118,7 @@ class Materializer:
         while current != self.root_dir.parent:
             init_file = current / "__init__.py"
             if not init_file.exists():
-                init_file.write_text(f"# SEAAM auto-generated package: {current.name}\n")
+                init_file.write_text(f"# SEAA auto-generated package: {current.name}\n")
                 logger.debug(f"Created package: {init_file}")
             current = current.parent
             if current == self.root_dir.parent:

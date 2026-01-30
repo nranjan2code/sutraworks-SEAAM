@@ -1,6 +1,6 @@
 # ⚙️ Operations Manual
 
-Complete guide to operating, configuring, and maintaining the SEAAM system.
+Complete guide to operating, configuring, and maintaining the SEAA system.
 
 ---
 
@@ -18,8 +18,8 @@ Complete guide to operating, configuring, and maintaining the SEAAM system.
 
 ```bash
 # Clone the repository
-git clone https://github.com/sutraworks/seaam.git
-cd seaam
+git clone https://github.com/sutraworks/seaa.git
+cd seaa
 
 # Install in development mode
 pip install -e .
@@ -34,7 +34,7 @@ pip install -r requirements.txt
 # Start Ollama (in a separate terminal)
 ollama run qwen2.5-coder:14b
 
-# Start SEAAM
+# Start SEAA
 python3 main.py
 ```
 
@@ -71,7 +71,7 @@ python3 main.py --reset
 
 ## 📁 Configuration
 
-SEAAM uses a layered configuration system:
+SEAA uses a layered configuration system:
 
 ```
 Priority (highest wins):
@@ -83,7 +83,7 @@ Priority (highest wins):
 ### `config.yaml` Reference
 
 ```yaml
-# SEAAM Configuration File
+# SEAA Configuration File
 # All values shown are defaults
 
 # LLM Provider Settings
@@ -105,7 +105,7 @@ paths:
   root: .                       # Project root
   dna: ./dna.json               # DNA file location
   soma: ./soma                  # Evolved organs directory
-  prompts: ./seaam/cortex/prompts  # Prompt templates
+  prompts: ./seaa/cortex/prompts  # Prompt templates
 
 # Evolution Settings
 metabolism:
@@ -123,8 +123,8 @@ circuit_breaker:
 # Evolutionary Memory
 genealogy:
   enabled: true                 # Enable local git for soma
-  user_name: "SEAAM Genesis"    # Git user.name for soma repo
-  user_email: "genesis@seaam.internal"
+  user_name: "SEAA Genesis"    # Git user.name for soma repo
+  user_email: "genesis@seaa.internal"
 
 # Security Settings
 security:
@@ -136,8 +136,8 @@ security:
     - fastapi
     - requests
   protected_prefixes:           # Paths that cannot be modified
-    - seaam.
-    - seaam/
+    - seaa.
+    - seaa/
 
 # Logging Settings
 logging:
@@ -154,11 +154,11 @@ environment: development        # 'development' or 'production'
 
 | Variable | Purpose | Example |
 |----------|---------|---------|
-| `SEAAM_LOG_LEVEL` | Override log level | `DEBUG` |
-| `SEAAM_LOG_FORMAT` | Log format | `json` |
-| `SEAAM_ALLOW_PIP` | Enable pip installs | `true` |
-| `SEAAM_ENV` | Environment name | `production` |
-| `SEAAM_WATCH_PATH` | Override observer watch path | `/data/watched` |
+| `SEAA_LOG_LEVEL` | Override log level | `DEBUG` |
+| `SEAA_LOG_FORMAT` | Log format | `json` |
+| `SEAA_ALLOW_PIP` | Enable pip installs | `true` |
+| `SEAA_ENV` | Environment name | `production` |
+| `SEAA_WATCH_PATH` | Override observer watch path | `/data/watched` |
 | `OLLAMA_URL` | Custom Ollama endpoint | `http://gpu-server:11434/api/generate` |
 | `OLLAMA_MODEL` | Override Ollama model | `codellama:34b` |
 | `GEMINI_API_KEY` | Enable Gemini fallback | `your-api-key` |
@@ -178,7 +178,7 @@ git log --oneline --graph
 
 ### Auto-Immune Response (Self-Healing)
 
-SEAAM is capable of **autonomous rollback**.
+SEAA is capable of **autonomous rollback**.
 
 If a newly evolved organ causes a critical failure (e.g., `ImportError`, `SyntaxError`) that prevents assimilation:
 1. `Immunity` detects the crash.
@@ -220,8 +220,8 @@ circuit_breaker:
 
 ```python
 # Via Python
-from seaam.dna import DNA
-from seaam.dna.repository import DNARepository
+from seaa.dna import DNA
+from seaa.dna.repository import DNARepository
 
 repo = DNARepository("dna.json")
 dna = repo.load_or_create()
@@ -276,7 +276,7 @@ cat > dna.json << 'EOF'
   "active_modules": [],
   "metadata": {
     "system_version": "1.0.0",
-    "system_name": "SEAAM",
+    "system_name": "SEAA",
     "created_at": "2026-01-01T00:00:00Z",
     "evolution_count": 0
   }
@@ -301,7 +301,7 @@ python3 main.py
 python3 -m pytest tests/ -v
 
 # Run with coverage
-python3 -m pytest tests/ --cov=seaam --cov-report=term-missing
+python3 -m pytest tests/ --cov=seaa --cov-report=term-missing
 
 # Run specific test file
 python3 -m pytest tests/unit/test_bus.py -v
@@ -327,13 +327,13 @@ python3 -m pytest tests/unit/test_bus.py::TestEventBus::test_subscribe_and_publi
 
 ```bash
 # Format code
-black seaam/ tests/
+black seaa/ tests/
 
 # Lint code
-ruff check seaam/ tests/
+ruff check seaa/ tests/
 
 # Type checking (if mypy installed)
-mypy seaam/
+mypy seaa/
 ```
 
 ---
@@ -341,18 +341,18 @@ mypy seaam/
 ## 🔒 Security
 
 <div align="center">
-  <img src="images/seaam_security_layers.png" alt="Security Layers" width="50%">
+  <img src="images/seaa_security_layers.png" alt="Security Layers" width="50%">
 </div>
 
 ### Default Security Posture
 
-SEAAM follows **security-first** principles:
+SEAA follows **security-first** principles:
 
 | Protection | Default | Description |
 |------------|---------|-------------|
 | Pip Install | **Disabled** | External packages cannot be installed |
 | Package Allowlist | Limited | Only approved packages can be installed |
-| Kernel Protection | **Enabled** | Cannot write to `seaam/*` |
+| Kernel Protection | **Enabled** | Cannot write to `seaa/*` |
 | Atomic Writes | **Enabled** | Prevents file corruption |
 
 ### Enabling Pip Install
@@ -373,14 +373,14 @@ security:
 Or via environment:
 
 ```bash
-SEAAM_ALLOW_PIP=true python3 main.py
+SEAA_ALLOW_PIP=true python3 main.py
 ```
 
 ### Kernel Protection
 
 The system **cannot** modify files with these prefixes:
-- `seaam.` (module names)
-- `seaam/` (file paths)
+- `seaa.` (module names)
+- `seaa/` (file paths)
 
 This protection is enforced in the Materializer and cannot be disabled.
 
@@ -404,7 +404,7 @@ ERROR    [ARCHITECT   ] Failed to parse JSON response: ...
 **Solutions:**
 1. Check Ollama is running: `curl http://localhost:11434/api/tags`
 2. Try a more capable model: `qwen2.5-coder:14b` or `codellama:34b`
-3. Check prompt templates in `seaam/cortex/prompts/`
+3. Check prompt templates in `seaa/cortex/prompts/`
 
 ---
 
@@ -420,7 +420,7 @@ WARNING  [GATEWAY     ] Validation FAILED: Missing start() function (attempt 1/3
 - Poor prompt engineering
 
 **Solutions:**
-1. Check `seaam/cortex/prompts/agent_factory.yaml` for clear instructions
+1. Check `seaa/cortex/prompts/agent_factory.yaml` for clear instructions
 2. Try a different model
 3. Increase `max_retries` in config
 
@@ -536,7 +536,7 @@ ValueError: Invalid configuration:
 **Solutions:**
 1. Check if EventBus worker is running:
    ```python
-   from seaam.kernel.bus import bus
+   from seaa.kernel.bus import bus
    print(bus._worker_running)
    ```
 2. Restart the system
@@ -552,7 +552,7 @@ For detailed diagnostics:
 python3 main.py --log-level DEBUG
 
 # JSON logging for parsing
-SEAAM_LOG_FORMAT=json python3 main.py > seaam.log 2>&1
+SEAA_LOG_FORMAT=json python3 main.py > seaa.log 2>&1
 ```
 
 ### Log Locations
@@ -656,7 +656,7 @@ security:
 logging:
   level: INFO
   format: json              # Machine-parseable
-  file: /var/log/seaam/seaam.log
+  file: /var/log/seaa/seaa.log
 
 environment: production
 ```
@@ -664,15 +664,15 @@ environment: production
 ### Running as a Service
 
 ```bash
-# systemd service file (/etc/systemd/system/seaam.service)
+# systemd service file (/etc/systemd/system/seaa.service)
 [Unit]
-Description=SEAAM Self-Evolving Agent
+Description=SEAA Self-Evolving Agent
 After=network.target
 
 [Service]
 Type=simple
-User=seaam
-WorkingDirectory=/opt/seaam
+User=seaa
+WorkingDirectory=/opt/seaa
 ExecStart=/usr/bin/python3 main.py
 Restart=always
 RestartSec=10
@@ -683,9 +683,9 @@ WantedBy=multi-user.target
 
 ```bash
 # Enable and start
-sudo systemctl enable seaam
-sudo systemctl start seaam
-sudo systemctl status seaam
+sudo systemctl enable seaa
+sudo systemctl start seaa
+sudo systemctl status seaa
 ```
 
 ---
@@ -694,4 +694,4 @@ sudo systemctl status seaam
 
 - [Architecture Deep Dive](ARCHITECTURE.md)
 - [Design Specifications](DESIGN.md)
-- [GitHub Repository](https://github.com/sutraworks/seaam)
+- [GitHub Repository](https://github.com/sutraworks/seaa)

@@ -1,10 +1,10 @@
 # CLAUDE.md - AI Assistant Guide
 
-This file provides context for AI assistants (Claude, etc.) working on the SEAAM codebase.
+This file provides context for AI assistants (Claude, etc.) working on the Self-Evolving Autonomous Agent codebase.
 
 ## Project Overview
 
-**SEAAM** (Self-Evolving Autonomous Agent Mesh) is a self-modifying AI system that:
+**Self-Evolving Autonomous Agent (SEAA)** is a self-modifying AI system that:
 - Writes its own Python code
 - Installs its own dependencies
 - Hot-loads new capabilities at runtime
@@ -13,7 +13,7 @@ This file provides context for AI assistants (Claude, etc.) working on the SEAAM
 ## Architecture Summary
 
 ```
-seaam/                      # Immutable kernel (CANNOT be modified by system)
+seaa/                      # Immutable kernel (CANNOT be modified by system)
 ├── core/                   # Infrastructure
 │   ├── logging.py          # Structured logging (JSON/colored)
 │   ├── config.py           # YAML config + env overrides
@@ -46,7 +46,7 @@ soma/                       # Evolved organs (SYSTEM-GENERATED)
 
 ## Key Invariants
 
-1. **Kernel Protection**: The system CANNOT modify files in `seaam/*`
+1. **Kernel Protection**: The system CANNOT modify files in `seaa/*`
 2. **Organ Contract**: Every organ MUST have a `def start():` function with zero required args
 3. **Thread Safety**: DNA access is locked, file writes are atomic
 4. **Pip Disabled**: External package installation is disabled by default
@@ -63,13 +63,13 @@ python3 -m pytest tests/ -v
 ```
 
 ### Adding a New Kernel Module
-1. Create file in `seaam/kernel/`
-2. Add to `seaam/kernel/__init__.py`
+1. Create file in `seaa/kernel/`
+2. Add to `seaa/kernel/__init__.py`
 3. Write tests in `tests/unit/`
 4. Update documentation
 
 ### Modifying Prompts
-Edit YAML files in `seaam/cortex/prompts/`:
+Edit YAML files in `seaa/cortex/prompts/`:
 - `architect_reflect.yaml` - System reflection
 - `agent_factory.yaml` - Code generation
 - `error_feedback.yaml` - Error recovery
@@ -82,26 +82,26 @@ Edit YAML files in `seaam/cortex/prompts/`:
 
 ### Logging
 ```python
-from seaam.core.logging import get_logger
+from seaa.core.logging import get_logger
 logger = get_logger("module_name")
 logger.info("Message", key="value")
 ```
 
 ### Configuration
 ```python
-from seaam.core.config import config
+from seaa.core.config import config
 model = config.llm.model
 ```
 
 ### Exceptions
 ```python
-from seaam.core.exceptions import MaterializationError
+from seaa.core.exceptions import MaterializationError
 raise MaterializationError("message", context={"key": "value"})
 ```
 
 ### Events
 ```python
-from seaam.kernel.bus import publish, subscribe, Event
+from seaa.kernel.bus import publish, subscribe, Event
 handle = subscribe("event.type", handler)
 publish(Event(event_type="event.type", data=payload))
 handle.unsubscribe()
@@ -109,7 +109,7 @@ handle.unsubscribe()
 
 ### Code Validation
 ```python
-from seaam.connectors.llm_gateway import ProviderGateway
+from seaa.connectors.llm_gateway import ProviderGateway
 gateway = ProviderGateway()
 is_valid, error = gateway.validate_code(code, "module_name")
 # Checks: syntax, forbidden imports (pip, subprocess, eval), start() signature
@@ -117,7 +117,7 @@ is_valid, error = gateway.validate_code(code, "module_name")
 
 ### Circuit Breaker
 ```python
-from seaam.dna.schema import DNA
+from seaa.dna.schema import DNA
 dna = DNA.from_dict(data)
 if dna.should_attempt("soma.xyz", max_attempts=3, cooldown_minutes=30):
     # Safe to evolve
@@ -127,7 +127,7 @@ dna.reset_circuit("soma.xyz")  # Manual reset
 
 ### Goal Satisfaction
 ```python
-from seaam.dna.schema import Goal
+from seaa.dna.schema import Goal
 goal = Goal(description="Perceive files", required_organs=["soma.perception.*"])
 # After soma.perception.observer becomes active:
 newly_satisfied = dna.check_goal_satisfaction()  # Auto-satisfies matching goals
@@ -198,4 +198,4 @@ The codebase was recently refactored for robustness:
 | DNA state | `dna.json` |
 | Tests | `tests/` |
 | Docs | `docs/` |
-| Prompts | `seaam/cortex/prompts/` |
+| Prompts | `seaa/cortex/prompts/` |

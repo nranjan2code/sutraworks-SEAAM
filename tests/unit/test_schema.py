@@ -5,7 +5,7 @@ Unit tests for DNA Schema
 import pytest
 import json
 from datetime import datetime
-from seaam.dna.schema import (
+from seaa.dna.schema import (
     DNA,
     OrganBlueprint,
     Failure,
@@ -115,7 +115,7 @@ class TestDNA:
         """Test creating fresh DNA."""
         dna = DNA.create_tabula_rasa()
         
-        assert dna.system_name == "SEAAM-TabulaRasa"
+        assert dna.system_name == "SEAA-TabulaRasa"
         assert len(dna.goals) == 3
         assert dna.goals[0].description == "I must be able to perceive the file system."
     
@@ -211,7 +211,7 @@ class TestDNA:
         """Test loading DNA with legacy format."""
         legacy_data = {
             "system_version": "0.0.1",
-            "system_name": "OldSEAAM",
+            "system_name": "OldSEAA",
             "blueprint": {
                 "soma.test": "Just a description string"  # Old format
             },
@@ -227,7 +227,7 @@ class TestDNA:
         
         dna = DNA.from_dict(legacy_data)
         
-        assert dna.system_name == "OldSEAAM"
+        assert dna.system_name == "OldSEAA"
         assert dna.blueprint["soma.test"].description == "Just a description string"
         assert dna.goals[0].description == "I must perceive"
         assert dna.failures[0].module_name == "soma.test"

@@ -1,5 +1,5 @@
 """
-SEAAM Configuration Management
+SEAA Configuration Management
 
 Centralized configuration with:
 - YAML file support
@@ -43,7 +43,7 @@ class PathsConfig:
     root: Path = field(default_factory=Path.cwd)
     dna: Path = field(default_factory=lambda: Path("dna.json"))
     soma: Path = field(default_factory=lambda: Path("soma"))
-    prompts: Path = field(default_factory=lambda: Path("seaam/cortex/prompts"))
+    prompts: Path = field(default_factory=lambda: Path("seaa/cortex/prompts"))
     logs: Path = field(default_factory=lambda: Path("logs"))
     
     def __post_init__(self):
@@ -88,8 +88,8 @@ class SecurityConfig:
         "requests",
     ])
     protected_prefixes: List[str] = field(default_factory=lambda: [
-        "seaam.",
-        "seaam/",
+        "seaa.",
+        "seaa/",
     ])
 
 
@@ -105,12 +105,12 @@ class LoggingConfig:
 class GenealogyConfig:
     """Evolutionary Memory (Git) configuration."""
     enabled: bool = True
-    user_name: str = "SEAAM Genesis"
-    user_email: str = "genesis@seaam.internal"
+    user_name: str = "SEAA Genesis"
+    user_email: str = "genesis@seaa.internal"
 
 
 @dataclass
-class SEAAMConfig:
+class SEAAConfig:
     """Root configuration object."""
     llm: LLMConfig = field(default_factory=LLMConfig)
     paths: PathsConfig = field(default_factory=PathsConfig)
@@ -125,7 +125,7 @@ class SEAAMConfig:
     environment: str = "development"
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SEAAMConfig":
+    def from_dict(cls, data: Dict[str, Any]) -> "SEAAConfig":
         """Create config from a dictionary."""
         config = cls()
         
@@ -178,12 +178,12 @@ class SEAAMConfig:
         return config
     
     @classmethod
-    def load(cls, config_path: Optional[Union[Path, str]] = None) -> "SEAAMConfig":
+    def load(cls, config_path: Optional[Union[Path, str]] = None) -> "SEAAConfig":
         """
         Load configuration from file with environment variable overrides.
         
         Priority (highest to lowest):
-        1. Environment variables (SEAAM_*)
+        1. Environment variables (SEAA_*)
         2. Config file (config.yaml)
         3. Defaults
         """
@@ -209,10 +209,10 @@ class SEAAMConfig:
     def _apply_env_overrides(self) -> None:
         """Apply environment variable overrides."""
         # LLM settings
-        if os.environ.get("SEAAM_LLM_PROVIDER"):
-            self.llm.provider = os.environ["SEAAM_LLM_PROVIDER"]
-        if os.environ.get("SEAAM_LLM_MODEL"):
-            self.llm.model = os.environ["SEAAM_LLM_MODEL"]
+        if os.environ.get("SEAA_LLM_PROVIDER"):
+            self.llm.provider = os.environ["SEAA_LLM_PROVIDER"]
+        if os.environ.get("SEAA_LLM_MODEL"):
+            self.llm.model = os.environ["SEAA_LLM_MODEL"]
         if os.environ.get("OLLAMA_URL"):
             self.llm.ollama_url = os.environ["OLLAMA_URL"]
         if os.environ.get("OLLAMA_MODEL"):
@@ -222,18 +222,18 @@ class SEAAMConfig:
             pass  # Just noting it exists
         
         # Logging
-        if os.environ.get("SEAAM_LOG_LEVEL"):
-            self.logging.level = os.environ["SEAAM_LOG_LEVEL"]
-        if os.environ.get("SEAAM_LOG_FORMAT"):
-            self.logging.format = os.environ["SEAAM_LOG_FORMAT"]
+        if os.environ.get("SEAA_LOG_LEVEL"):
+            self.logging.level = os.environ["SEAA_LOG_LEVEL"]
+        if os.environ.get("SEAA_LOG_FORMAT"):
+            self.logging.format = os.environ["SEAA_LOG_FORMAT"]
         
         # Security
-        if os.environ.get("SEAAM_ALLOW_PIP"):
-            self.security.allow_pip_install = os.environ["SEAAM_ALLOW_PIP"].lower() == "true"
+        if os.environ.get("SEAA_ALLOW_PIP"):
+            self.security.allow_pip_install = os.environ["SEAA_ALLOW_PIP"].lower() == "true"
         
         # Environment
-        if os.environ.get("SEAAM_ENV"):
-            self.environment = os.environ["SEAAM_ENV"]
+        if os.environ.get("SEAA_ENV"):
+            self.environment = os.environ["SEAA_ENV"]
     
     def validate(self) -> List[str]:
         """
@@ -327,4 +327,4 @@ class SEAAMConfig:
 
 
 # Global config instance
-config = SEAAMConfig.load()
+config = SEAAConfig.load()

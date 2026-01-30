@@ -5,7 +5,7 @@ Unit tests for the EventBus (Nervous System)
 import pytest
 import time
 import threading
-from seaam.kernel.bus import EventBus, Event, bus, subscribe, publish
+from seaa.kernel.bus import EventBus, Event, bus, subscribe, publish
 
 
 class TestEvent:

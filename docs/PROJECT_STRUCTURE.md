@@ -1,13 +1,13 @@
 # 📂 Project Structure
 
-Complete breakdown of the SEAAM codebase after the A+ Grade refactor.
+Complete breakdown of the SEAA codebase after the A+ Grade refactor.
 
 ---
 
 ## Root Directory
 
 ```
-sutraworks-SEAAM/
+sutraworks-SEAA/
 ├── main.py                     # Entry point with CLI
 ├── config.yaml                 # System configuration
 ├── dna.json                    # Persistent DNA state
@@ -16,7 +16,7 @@ sutraworks-SEAAM/
 ├── README.md                   # Main documentation
 ├── CLAUDE.md                   # AI assistant guide
 │
-├── seaam/                      # Core system (immutable)
+├── seaa/                      # Core system (immutable)
 ├── soma/                       # Evolved organs (system-generated)
 ├── tests/                      # Test suite
 └── docs/                       # Documentation
@@ -24,12 +24,12 @@ sutraworks-SEAAM/
 
 ---
 
-## Core System (`seaam/`)
+## Core System (`seaa/`)
 
 The immutable kernel that cannot be modified by the system itself.
 
 ```
-seaam/
+seaa/
 ├── __init__.py                 # Package exports
 │
 ├── core/                       # 🔧 Infrastructure
@@ -70,7 +70,7 @@ seaam/
 
 ## Evolved Organs (`soma/`)
 
-System-generated code. This directory starts empty and is populated by SEAAM.
+System-generated code. This directory starts empty and is populated by SEAA.
 
 ```
 soma/                           # 🫀 The Evolved Body
@@ -127,7 +127,7 @@ tests/
 python3 -m pytest tests/ -v
 
 # With coverage
-python3 -m pytest tests/ --cov=seaam
+python3 -m pytest tests/ --cov=seaa
 
 # Specific file
 python3 -m pytest tests/unit/test_bus.py -v
@@ -151,17 +151,17 @@ docs/
 ├── PROJECT_STRUCTURE.md        # This file
 │
 └── images/                     # Diagrams and visuals
-    ├── seaam_hero_logo.png
-    ├── seaam_architecture_clean.png
-    ├── seaam_evolution_flow.png
-    ├── seaam_dna_structure.png
-    ├── seaam_module_diagram.png
-    ├── seaam_event_bus.png
-    └── seaam_security_layers.png
+    ├── seaa_hero_logo.png
+    ├── seaa_architecture_clean.png
+    ├── seaa_evolution_flow.png
+    ├── seaa_dna_structure.png
+    ├── seaa_module_diagram.png
+    ├── seaa_event_bus.png
+    └── seaa_security_layers.png
 ```
 
 <div align="center">
-  <img src="images/seaam_module_diagram.png" alt="Module Dependencies" width="60%">
+  <img src="images/seaa_module_diagram.png" alt="Module Dependencies" width="60%">
   <p><em>Package dependencies - clean UML-style view</em></p>
 </div>
 
@@ -180,8 +180,8 @@ llm:
 security:
   allow_pip_install: false
   protected_prefixes:
-    - seaam.
-    - seaam/
+    - seaa.
+    - seaa/
 
 logging:
   level: INFO
@@ -192,7 +192,7 @@ logging:
 
 ```toml
 [project]
-name = "seaam"
+name = "seaa"
 version = "1.0.0"
 requires-python = ">=3.9"
 
@@ -229,20 +229,20 @@ dev = [
 
 | Module | Location | Purpose |
 |--------|----------|---------|
-| **Logging** | `seaam/core/logging.py` | JSON/colored structured logging |
-| **Config** | `seaam/core/config.py` | YAML + env variable configuration |
-| **Exceptions** | `seaam/core/exceptions.py` | Typed exception hierarchy |
-| **Schema** | `seaam/dna/schema.py` | DNA dataclass definitions |
-| **Repository** | `seaam/dna/repository.py` | Thread-safe DNA persistence |
-| **Genesis** | `seaam/kernel/genesis.py` | Slim orchestrator |
-| **EventBus** | `seaam/kernel/bus.py` | Async pub/sub messaging |
-| **Assimilator** | `seaam/kernel/assimilator.py` | Dynamic module loading |
-| **Materializer** | `seaam/kernel/materializer.py` | Atomic file writing |
-| **Immunity** | `seaam/kernel/immunity.py` | Error recovery & healing |
-| **Genealogy** | `seaam/kernel/genealogy.py` | Evolutionary memory & rollback |
-| **Architect** | `seaam/cortex/architect.py` | System designer |
-| **PromptLoader** | `seaam/cortex/prompt_loader.py` | YAML template management |
-| **LLMGateway** | `seaam/connectors/llm_gateway.py` | LLM provider abstraction |
+| **Logging** | `seaa/core/logging.py` | JSON/colored structured logging |
+| **Config** | `seaa/core/config.py` | YAML + env variable configuration |
+| **Exceptions** | `seaa/core/exceptions.py` | Typed exception hierarchy |
+| **Schema** | `seaa/dna/schema.py` | DNA dataclass definitions |
+| **Repository** | `seaa/dna/repository.py` | Thread-safe DNA persistence |
+| **Genesis** | `seaa/kernel/genesis.py` | Slim orchestrator |
+| **EventBus** | `seaa/kernel/bus.py` | Async pub/sub messaging |
+| **Assimilator** | `seaa/kernel/assimilator.py` | Dynamic module loading |
+| **Materializer** | `seaa/kernel/materializer.py` | Atomic file writing |
+| **Immunity** | `seaa/kernel/immunity.py` | Error recovery & healing |
+| **Genealogy** | `seaa/kernel/genealogy.py` | Evolutionary memory & rollback |
+| **Architect** | `seaa/cortex/architect.py` | System designer |
+| **PromptLoader** | `seaa/cortex/prompt_loader.py` | YAML template management |
+| **LLMGateway** | `seaa/connectors/llm_gateway.py` | LLM provider abstraction |
 
 ---
 

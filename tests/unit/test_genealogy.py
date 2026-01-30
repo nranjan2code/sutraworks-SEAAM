@@ -3,7 +3,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from seaam.kernel.genealogy import Genealogy
+from seaa.kernel.genealogy import Genealogy
 
 @pytest.fixture
 def temp_soma(tmp_path):
@@ -15,7 +15,7 @@ def temp_soma(tmp_path):
 @pytest.fixture
 def mock_config():
     """Mock configuration."""
-    with patch("seaam.kernel.genealogy.config") as mock:
+    with patch("seaa.kernel.genealogy.config") as mock:
         mock.genealogy.enabled = True
         mock.genealogy.user_name = "Test User"
         mock.genealogy.user_email = "test@example.com"

@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "seaam"
+name = "seaa"
 version = "1.0.0"
-description = "Self-Evolving Autonomous Agent Mesh - The code that writes itself"
+description = "Self-Evolving Autonomous Agent - The code that writes itself"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
@@ -43,17 +43,17 @@ dev = [
 ]
 
 [project.scripts]
-seaam = "main:main"
+seaa = "main:main"
 
 [project.urls]
-Homepage = "https://github.com/sutraworks/seaam"
-Documentation = "https://github.com/sutraworks/seaam#readme"
-Repository = "https://github.com/sutraworks/seaam.git"
-Issues = "https://github.com/sutraworks/seaam/issues"
+Homepage = "https://github.com/sutraworks/seaa"
+Documentation = "https://github.com/sutraworks/seaa#readme"
+Repository = "https://github.com/sutraworks/seaa.git"
+Issues = "https://github.com/sutraworks/seaa/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["seaam*"]
+include = ["seaa*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -63,7 +63,7 @@ asyncio_mode = "auto"
 addopts = "-v --tb=short"
 
 [tool.coverage.run]
-source = ["seaam"]
+source = ["seaa"]
 omit = ["tests/*", "soma/*"]
 
 [tool.coverage.report]

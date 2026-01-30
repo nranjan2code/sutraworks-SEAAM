@@ -1,5 +1,5 @@
 """
-SEAAM Genesis - The Primal Will
+SEAA Genesis - The Primal Will
 
 The slim orchestrator that coordinates the system lifecycle.
 All complex logic is delegated to specialized components:
@@ -19,22 +19,22 @@ import time
 from pathlib import Path
 from typing import Callable, Optional, Union
 
-from seaam.core.logging import get_logger, setup_logging
-from seaam.core.config import config
-from seaam.core.exceptions import (
-    SEAAMError,
+from seaa.core.logging import get_logger, setup_logging
+from seaa.core.config import config
+from seaa.core.exceptions import (
+    SEAAError,
     ImportFailedError,
     AssimilationError,
 )
-from seaam.dna import DNA, DNARepository
-from seaam.dna.schema import FailureType, OrganBlueprint
-from seaam.kernel.bus import bus, Event
-from seaam.kernel.assimilator import Assimilator
-from seaam.kernel.materializer import Materializer
-from seaam.kernel.immunity import Immunity
-from seaam.connectors.llm_gateway import ProviderGateway
-from seaam.cortex.architect import Architect
-from seaam.kernel.genealogy import Genealogy
+from seaa.dna import DNA, DNARepository
+from seaa.dna.schema import FailureType, OrganBlueprint
+from seaa.kernel.bus import bus, Event
+from seaa.kernel.assimilator import Assimilator
+from seaa.kernel.materializer import Materializer
+from seaa.kernel.immunity import Immunity
+from seaa.connectors.llm_gateway import ProviderGateway
+from seaa.cortex.architect import Architect
+from seaa.kernel.genealogy import Genealogy
 
 logger = get_logger("genesis")
 
@@ -43,7 +43,7 @@ class Genesis:
     """
     The Primal Will.
     
-    Genesis orchestrates the lifecycle of the SEAAM system:
+    Genesis orchestrates the lifecycle of the SEAA system:
     1. Awakening - Load DNA, initialize components
     2. Evolution - Architect designs, Gateway generates, Materializer writes
     3. Assimilation - Load and activate organs
@@ -132,7 +132,7 @@ class Genesis:
         4. Enter metabolic life loop
         """
         logger.info("=" * 50)
-        logger.info(f"SEAAM v{self.dna.system_version} AWAKENING")
+        logger.info(f"SEAA v{self.dna.system_version} AWAKENING")
         logger.info("=" * 50)
         
         # Start event bus worker

@@ -4,6 +4,6 @@ Ensures packages are properly initialized
 """
 
 
-def test_seaam_init():
+def test_seaa_init():
     """Empty test for now"""
     pass

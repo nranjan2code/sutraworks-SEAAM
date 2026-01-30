@@ -26,17 +26,17 @@ template: |
   4. EVOLVE PURPOSE: If current goals are largely satisfied, you MUST propose a NEW high-level goal to expand the system's intelligence, autonomy, or utility.
 
   CRITICAL KERNEL CONTRACT:
-  - The system HAS a nervous system: `seaam.kernel.bus`.
+  - The system HAS a nervous system: `seaa.kernel.bus`.
   - **EVENT BUS API**:
-    * `from seaam.kernel.bus import bus, Event`
+    * `from seaa.kernel.bus import bus, Event`
     * `bus.subscribe(event_type: str, callback: Callable[[Event], None])`
     * `bus.publish(Event(event_type: str, data: Any))`
   - **EVERY MODULE MUST HAVE A GLOBAL `start()` FUNCTION WITH ZERO REQUIRED ARGS.**
 
   AVAILABLE IMPORTS:
-  - `from seaam.kernel.bus import bus, Event` - Event bus
-  - `from seaam.core.logging import get_logger` - Logging
-  - `from seaam.core.config import config` - Configuration
+  - `from seaa.kernel.bus import bus, Event` - Event bus
+  - `from seaa.core.logging import get_logger` - Logging
+  - `from seaa.core.config import config` - Configuration
 
   - Purpose: Define your own organ names and paths under the `soma.` package.
 
@@ -45,8 +45,8 @@ template: |
     * **FORBIDDEN**: `import soma.memory.journal` inside `soma.perception.observer`.
     * **CORRECT**: Publish an event from `observer` and subscribe in `journal`.
     * **NO REDUNDANT PREFIXES**:
-      - CORRECT: `from seaam.kernel.bus import bus`
-      - INCORRECT: `import soma.seaam.kernel.bus`
+      - CORRECT: `from seaa.kernel.bus import bus`
+      - INCORRECT: `import soma.seaa.kernel.bus`
 
   - **SECURITY RESTRICTIONS** (organs will be rejected if violated):
     * NO subprocess, pip, os.system, os.popen, eval, exec

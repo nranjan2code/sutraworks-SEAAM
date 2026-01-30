@@ -10,9 +10,9 @@ template: |
 
   AVAILABLE MODULES (you can import these):
   - Kernel modules (always available):
-    * `from seaam.kernel.bus import bus, Event` - Event bus for inter-organ communication
-    * `from seaam.core.logging import get_logger` - Structured logging
-    * `from seaam.core.config import config` - System configuration
+    * `from seaa.kernel.bus import bus, Event` - Event bus for inter-organ communication
+    * `from seaa.core.logging import get_logger` - Structured logging
+    * `from seaa.core.config import config` - System configuration
 
   {% if active_modules %}
   - Currently active organs (communicate via Event Bus, do NOT import directly):
@@ -24,9 +24,9 @@ template: |
   WARNING: Do NOT import modules that don't exist. Do NOT import soma.* modules directly.
 
   KERNEL CONTRACT:
-  - Nervous System: `seaam.kernel.bus`
+  - Nervous System: `seaa.kernel.bus`
   - **EVENT BUS API**:
-    * `from seaam.kernel.bus import bus, Event`
+    * `from seaa.kernel.bus import bus, Event`
     * `bus.subscribe(event_type: str, callback: Callable[[Event], None])`
     * `bus.publish(Event(event_type: str, data: Any))`
 
@@ -35,8 +35,8 @@ template: |
   DECOUPLING RULES:
   1. **NO DIRECT IMPORTS BETWEEN SOMA ORGANS**. Use the Event Bus.
   2. **FORBIDDEN**: `import soma.memory.journal` inside `soma.perception.observer`.
-  3. **CORRECT**: Publish/Subscribe via `seaam.kernel.bus`.
-  4. **NO HALLUCINATIONS**: Do not use `import event_bus`. Always use `from seaam.kernel.bus import bus`.
+  3. **CORRECT**: Publish/Subscribe via `seaa.kernel.bus`.
+  4. **NO HALLUCINATIONS**: Do not use `import event_bus`. Always use `from seaa.kernel.bus import bus`.
 
   SECURITY RESTRICTIONS (code will be rejected if violated):
   - NO `import pip` or `pip.main()`
@@ -52,8 +52,8 @@ template: |
   5. **CRITICAL**: You MUST define a global `def start():` function at the end of the file with ZERO required arguments.
 
   EXAMPLE FORMAT:
-  from seaam.kernel.bus import bus, Event
-  from seaam.core.logging import get_logger
+  from seaa.kernel.bus import bus, Event
+  from seaa.core.logging import get_logger
 
   logger = get_logger("my_organ")
 

@@ -1,5 +1,5 @@
 """
-SEAAM LLM Gateway
+SEAA LLM Gateway
 
 Abstraction layer for LLM providers (Ollama, Gemini).
 
@@ -20,14 +20,14 @@ import requests
 import json
 from typing import Any, Optional, Union, List, Tuple
 
-from seaam.core.logging import get_logger
-from seaam.core.config import config
-from seaam.core.exceptions import (
+from seaa.core.logging import get_logger
+from seaa.core.config import config
+from seaa.core.exceptions import (
     GatewayError,
     ProviderUnavailableError,
     InvalidResponseError,
 )
-from seaam.cortex.prompt_loader import prompt_loader
+from seaa.cortex.prompt_loader import prompt_loader
 
 logger = get_logger("gateway")
 
@@ -400,7 +400,7 @@ class ProviderGateway:
         Description: {description}
         
         Requirements:
-        1. Use `from seaam.kernel.bus import bus, Event` for events
+        1. Use `from seaa.kernel.bus import bus, Event` for events
         2. Include a global `def start():` function at the end
         3. Return ONLY Python code, no markdown
         

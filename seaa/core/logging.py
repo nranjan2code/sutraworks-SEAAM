@@ -1,5 +1,5 @@
 """
-SEAAM Structured Logging
+SEAA Structured Logging
 
 Production-ready logging with:
 - JSON format for production (machine-readable)
@@ -97,14 +97,14 @@ def setup_logging(
     log_file: Optional[str] = None
 ) -> None:
     """
-    Configure the root logger for SEAAM.
+    Configure the root logger for SEAA.
     
     Args:
         level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         format_type: 'json' for production, 'colored' for development
         log_file: Optional file path to write logs
     """
-    root_logger = logging.getLogger("seaam")
+    root_logger = logging.getLogger("seaa")
     root_logger.setLevel(getattr(logging, level.upper()))
     
     # Clear existing handlers
@@ -138,7 +138,7 @@ def get_logger(name: str) -> logging.Logger:
     Returns:
         Configured logger instance
     """
-    return logging.getLogger(f"seaam.{name}")
+    return logging.getLogger(f"seaa.{name}")
 
 
 class LogContext:

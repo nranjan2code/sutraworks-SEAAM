@@ -1,1 +1,1 @@
-# SEAAM auto-generated package: sutraworks-SEAAM
+# SEAA auto-generated package: sutraworks-SEAA

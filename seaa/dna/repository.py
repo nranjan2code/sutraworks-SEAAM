@@ -1,5 +1,5 @@
 """
-SEAAM DNA Repository
+SEAA DNA Repository
 
 Persistent storage for DNA with:
 - Atomic writes (prevent corruption)
@@ -16,13 +16,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional, Union, List
 
-from seaam.core.logging import get_logger
-from seaam.core.exceptions import (
+from seaa.core.logging import get_logger
+from seaa.core.exceptions import (
     DNANotFoundError,
     DNACorruptedError,
     DNAValidationError,
 )
-from seaam.dna.schema import DNA
+from seaa.dna.schema import DNA
 
 logger = get_logger("dna.repository")
 

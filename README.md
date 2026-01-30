@@ -1,8 +1,8 @@
 <div align="center">
-  <img src="docs/images/seaam_hero_logo.png" alt="SEAAM Logo" width="300px">
+  <img src="docs/images/seaa_hero_logo.png" alt="Self-Evolving Autonomous Agent Logo" width="300px">
   
-  # SEAAM
-  ### Self-Evolving Autonomous Agent Mesh
+  # Self-Evolving Autonomous Agent
+  ### The agent that writes itself
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
@@ -24,9 +24,9 @@
 
 ## 🌌 Philosophy
 
-SEAAM is not just an agent; it is an experiment in **Digital Autopoiesis** (self-creation). 
+The Self-Evolving Autonomous Agent (SEAA) is not just an agent; it is an experiment in **Digital Autopoiesis** (self-creation). 
 
-Unlike traditional software which is architected by humans, SEAAM starts as a minimal biological kernel. It possesses:
+Unlike traditional software which is architected by humans, SEAA starts as a minimal biological kernel. It possesses:
 1.  **A Will**: The drive to exist and evolve (`Genesis`)
 2.  **A Mind**: The ability to reason about its own structure (`Architect`)
 3.  **A Body**: Which is built, organ by organ, by the system itself (`Soma`)
@@ -38,13 +38,13 @@ It reasons about its goals, designs its own architecture, generates the necessar
 ## 🏛 Architecture
 
 <div align="center">
-  <img src="docs/images/seaam_architecture_clean.png" alt="SEAAM Architecture" width="70%">
+  <img src="docs/images/seaa_architecture_clean.png" alt="SEAA Architecture" width="70%">
 </div>
 
 The system is composed of three biological layers:
 
 ### 1. 🧬 **KERNEL** (The Immutable Seed)
-Located in `seaam/kernel/`, the kernel is the DNA of SEAAM—it cannot be modified by the system itself.
+Located in `seaa/kernel/`, the kernel is the DNA of the agent—it cannot be modified by the system itself.
 
 | Module | Purpose |
 |--------|---------|
@@ -56,7 +56,7 @@ Located in `seaam/kernel/`, the kernel is the DNA of SEAAM—it cannot be modifi
 | `genealogy.py` | Evolutionary memory (local git) and rollback capability |
 
 ### 2. 🧠 **CORTEX** (The Mind)
-Located in `seaam/cortex/`, the cortex is responsible for reasoning and design.
+Located in `seaa/cortex/`, the cortex is responsible for reasoning and design.
 
 | Module | Purpose |
 |--------|---------|
@@ -74,15 +74,15 @@ The `soma/` directory contains **evolved organs**—modules written by the syste
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| **Core** | `seaam/core/` | Logging, configuration, exceptions |
-| **DNA** | `seaam/dna/` | Schema validation, repository with atomic writes |
-| **Connectors** | `seaam/connectors/` | LLM Gateway (Ollama/Gemini abstraction) |
+| **Core** | `seaa/core/` | Logging, configuration, exceptions |
+| **DNA** | `seaa/dna/` | Schema validation, repository with atomic writes |
+| **Connectors** | `seaa/connectors/` | LLM Gateway (Ollama/Gemini abstraction) |
 
 ---
 
 ## 🛡️ Autonomous Self-Correction
 
-SEAAM is designed to survive failures in its own evolution:
+The agent is designed to survive failures in its own evolution:
 
 ```mermaid
 flowchart TD
@@ -117,8 +117,8 @@ flowchart TD
 
 ```bash
 # Clone the repository
-git clone https://github.com/sutraworks/seaam.git
-cd seaam
+git clone https://github.com/sutraworks/seaa.git
+cd seaa
 
 # Install dependencies
 pip install -e .
@@ -149,14 +149,14 @@ Options:
 
 ## 🧪 Testing
 
-SEAAM has a comprehensive test suite with **81 passing tests**.
+The agent has a comprehensive test suite with **81 passing tests**.
 
 ```bash
 # Run all tests
 python3 -m pytest tests/ -v
 
 # Run with coverage
-python3 -m pytest tests/ --cov=seaam --cov-report=term-missing
+python3 -m pytest tests/ --cov=seaa --cov-report=term-missing
 
 # Run specific test modules
 python3 -m pytest tests/unit/test_bus.py -v
@@ -180,7 +180,7 @@ python3 -m pytest tests/integration/test_validation.py -v
 
 ## 🏝️ The "Robinson Crusoe" Test
 
-We verify SEAAM by effectively stranding it on a desert island:
+We verify the agent by effectively stranding it on a desert island:
 
 > We wipe its memory. We destroy its body. We uninstall its tools.
 
@@ -196,13 +196,13 @@ python3 main.py --reset
 ## 📁 Project Structure
 
 ```
-sutraworks-SEAAM/
+sutraworks-SEAA/
 ├── main.py                  # Entry point with CLI
 ├── config.yaml              # System configuration
 ├── dna.json                 # Persistent DNA state
 ├── pyproject.toml           # Build configuration
 │
-├── seaam/                   # Core system (immutable kernel)
+├── seaa/                   # Core system (immutable kernel)
 │   ├── core/                # Infrastructure
 │   │   ├── logging.py       # Structured JSON/colored logging
 │   │   ├── config.py        # YAML config with env overrides
@@ -246,7 +246,7 @@ sutraworks-SEAAM/
 
 ## ⚙️ Configuration
 
-SEAAM uses a layered configuration system:
+The agent uses a layered configuration system:
 
 1. **Defaults** (built-in sensible defaults)
 2. **config.yaml** (file-based configuration)
@@ -283,9 +283,9 @@ logging:
 
 | Variable | Purpose |
 |----------|---------|
-| `SEAAM_LOG_LEVEL` | Override log level |
-| `SEAAM_ALLOW_PIP` | Enable pip installs ("true") |
-| `SEAAM_WATCH_PATH` | Custom path for filesystem observer |
+| `SEAA_LOG_LEVEL` | Override log level |
+| `SEAA_ALLOW_PIP` | Enable pip installs ("true") |
+| `SEAA_WATCH_PATH` | Custom path for filesystem observer |
 | `OLLAMA_URL` | Custom Ollama endpoint |
 | `GEMINI_API_KEY` | Enable Gemini fallback |
 
@@ -301,9 +301,9 @@ logging:
 
 ## 🔒 Security
 
-SEAAM follows security-first principles:
+The agent follows security-first principles:
 
-- **Kernel Protection**: The system cannot modify `seaam/*` files
+- **Kernel Protection**: The system cannot modify `seaa/*` files
 - **Code Validation**: AST-based validation rejects:
   - Syntax errors
   - Forbidden imports (`pip`, `subprocess`, `os.system`, `eval`, `exec`)

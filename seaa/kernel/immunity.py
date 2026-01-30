@@ -1,5 +1,5 @@
 """
-SEAAM Immunity System
+SEAA Immunity System
 
 Responsible for healing and error recovery.
 
@@ -16,19 +16,19 @@ import sys
 from pathlib import Path
 from typing import Callable, Optional, Union
 
-from seaam.core.logging import get_logger
-from seaam.core.config import config
-from seaam.core.exceptions import (
+from seaa.core.logging import get_logger
+from seaa.core.config import config
+from seaa.core.exceptions import (
     DependencyResolutionError,
     ImmunityError,
 )
-from seaam.dna.schema import FailureType
+from seaa.dna.schema import FailureType
 
 # Avoid circular import with type checking only if needed, 
 # but here we pass the instance.
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from seaam.kernel.genealogy import Genealogy
+    from seaa.kernel.genealogy import Genealogy
 
 logger = get_logger("immunity")
 
@@ -45,7 +45,7 @@ class DependencyClassification:
     ):
         self.package_name = package_name
         self.is_internal = is_internal  # Part of soma/ (evolved)
-        self.is_seed = is_seed  # Part of seaam/ (immutable kernel)
+        self.is_seed = is_seed  # Part of seaa/ (immutable kernel)
         self.suggested_soma_path = suggested_soma_path
 
 
@@ -76,7 +76,7 @@ class Immunity:
         """
         self.root_dir = Path(root_dir) if root_dir else config.paths.root
         self.soma_dir = self.root_dir / "soma"
-        self.seaam_dir = self.root_dir / "seaam"
+        self.seaa_dir = self.root_dir / "seaa"
         self.on_blueprint_needed = on_blueprint_needed
         self.on_failure_report = on_failure_report
         self.genealogy = genealogy
@@ -123,7 +123,7 @@ class Immunity:
         - A seed component (kernel error)
         - An external package (maybe pip installable)
         """
-        # Check if it's explicitly a soma or seaam import
+        # Check if it's explicitly a soma or seaa import
         if package_name.startswith("soma."):
             return DependencyClassification(
                 package_name=package_name,
@@ -132,10 +132,10 @@ class Immunity:
                 suggested_soma_path=package_name,
             )
         
-        if package_name.startswith("seaam."):
+        if package_name.startswith("seaa."):
             # Check if this seed file actually exists
             parts = package_name.split(".")
-            seed_path = self.seaam_dir.parent
+            seed_path = self.seaa_dir.parent
             for part in parts:
                 seed_path = seed_path / part
             
@@ -147,7 +147,7 @@ class Immunity:
                     is_seed=True,
                 )
             else:
-                # seaam.* that doesn't exist - likely a typo or hallucination
+                # seaa.* that doesn't exist - likely a typo or hallucination
                 return DependencyClassification(
                     package_name=package_name,
                     is_internal=False,

@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from seaam.kernel.immunity import Immunity
-from seaam.dna.schema import FailureType
+from seaa.kernel.immunity import Immunity
+from seaa.dna.schema import FailureType
 
 class TestAutoImmuneResponse:
     
