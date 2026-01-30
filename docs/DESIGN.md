@@ -696,7 +696,113 @@ class OrganThread(threading.Thread):
 
 ---
 
-## 11. Metrics & Observability
+## 11. Observability Design
+
+The observability layer provides introspection into the running SEAA system, designed to work even when soma is broken.
+
+### Design Principles
+
+**Static vs Evolvable:**
+
+| Component | Location | Survives Reset | Mesh-Ready |
+|-----------|----------|----------------|------------|
+| Identity | `.identity.json` | Yes | Yes |
+| Beacon | `kernel/beacon.py` | N/A (stateless) | Yes |
+| Observer | `kernel/observer.py` | N/A (stateless) | Local only |
+| Protocols | `kernel/protocols.py` | N/A (contracts) | Yes |
+| soma.interface.* | Evolved | No | Depends |
+| soma.extensions.* | Evolved | No | Depends |
+| soma.mesh.* | Evolved | No | Yes |
+
+**Key Insight:** The kernel provides the **universal contract** (what CAN be observed), while soma provides the **implementation** (HOW it's observed).
+
+### Identity Design
+
+Identity is separate from DNA to ensure it survives resets:
+
+```
+dna.json           .identity.json
+┌────────────┐     ┌─────────────┐
+│ blueprint  │     │ id: UUID    │ ← Never changes
+│ goals      │     │ name: str   │ ← Can change
+│ active     │     │ genesis: ts │ ← Never changes
+│ failures   │     │ lineage: h  │ ← Captured at birth
+└────────────┘     └─────────────┘
+     ↓ reset           unchanged
+┌────────────┐     ┌─────────────┐
+│ (empty)    │     │ (same)      │
+└────────────┘     └─────────────┘
+```
+
+This enables:
+- Mesh node identification
+- Instance tracking across resets
+- Genealogy/lineage tracking (for future reproduction)
+
+### Protocol Design
+
+Protocols use Python's `Protocol` for structural subtyping:
+
+```python
+@runtime_checkable
+class Observable(Protocol):
+    """Minimal contract for any observable instance."""
+    def get_vitals(self) -> Vitals: ...
+    def get_organs(self) -> List[OrganInfo]: ...
+    def get_goals(self) -> List[GoalInfo]: ...
+    def get_failures(self) -> List[FailureInfo]: ...
+```
+
+This enables:
+- Type checking at runtime (`isinstance(obj, Observable)`)
+- Mesh interoperability (any instance can query another)
+- Future evolution (soma can implement richer interfaces)
+
+### Mesh-Ready Architecture
+
+```
+Today (Robinson):              Tomorrow (Mesh):
+┌─────────────┐               ┌─────────────┐   ┌─────────────┐
+│   Robinson  │               │   Node A    │───│   Node B    │
+│   (solo)    │               │  beacon     │   │  beacon     │
+│             │               └──────┬──────┘   └──────┬──────┘
+│  kernel/    │                       \           /
+│    beacon   │                        \         /
+│    observer │                     ┌────────────┐
+└─────────────┘                     │   Fleet    │
+                                    │  Observer  │
+                                    │ (evolved)  │
+                                    └────────────┘
+```
+
+Beacon provides the **universal query interface**:
+- `get_vitals()` - Essential metrics (works over network)
+- `get_organs()` - Organ status
+- `get_goals()` - Goal satisfaction
+- `get_failures()` - Failure records
+
+Soma can evolve **fleet aggregators** that query multiple beacons.
+
+### CLI Design
+
+CLI commands are dispatched before Genesis starts:
+
+```python
+# Query commands run instantly (no agent startup)
+if args.command in ["status", "organs", "goals", ...]:
+    # Quiet logging, query kernel directly
+    cmd_status(args)  # Uses Observer
+    return
+
+# Default: start the agent
+genesis.awaken()
+```
+
+This ensures observability is available even when the agent isn't running.
+
+---
+
+## 12. Metrics & Observability (Evolved)
 
 ### Logged Events
 

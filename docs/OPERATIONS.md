@@ -40,11 +40,26 @@ python3 main.py
 
 ---
 
-## 🎛️ Command Line Interface
+## Command Line Interface
 
 ```bash
-python3 main.py [OPTIONS]
+python3 main.py [COMMAND] [OPTIONS]
 ```
+
+### Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| *(none)* | Start the agent (default) | `python3 main.py` |
+| `status` | Show system health and vitals | `python3 main.py status` |
+| `organs` | List organs with health status | `python3 main.py organs` |
+| `goals` | Show goal satisfaction progress | `python3 main.py goals` |
+| `failures` | Show failure records | `python3 main.py failures` |
+| `identity` | Show/set instance identity | `python3 main.py identity` |
+| `timeline` | Show evolution timeline | `python3 main.py timeline` |
+| `watch` | Stream events in real-time | `python3 main.py watch` |
+
+### Global Options
 
 | Option | Description | Example |
 |--------|-------------|---------|
@@ -52,6 +67,76 @@ python3 main.py [OPTIONS]
 | `--reset` | Reset to tabula rasa state | `python3 main.py --reset` |
 | `--config CONFIG` | Use custom config file | `python3 main.py --config prod.yaml` |
 | `--log-level LEVEL` | Override log level | `python3 main.py --log-level DEBUG` |
+
+### Command-Specific Options
+
+```bash
+# status - Show system health
+python3 main.py status              # Human-readable output
+python3 main.py status --json       # JSON output
+
+# organs - List organs
+python3 main.py organs              # Active organs only
+python3 main.py organs --all        # Include stopped organs
+python3 main.py organs --json       # JSON output
+
+# goals - Show goals
+python3 main.py goals               # Human-readable
+python3 main.py goals --json        # JSON output
+
+# failures - Show failures
+python3 main.py failures            # Human-readable
+python3 main.py failures --json     # JSON output
+
+# identity - Show/set identity
+python3 main.py identity            # Show current identity
+python3 main.py identity --name X   # Set instance name
+python3 main.py identity --json     # JSON output
+
+# timeline - Show evolution history
+python3 main.py timeline            # Last 20 events
+python3 main.py timeline --limit 50 # Last 50 events
+python3 main.py timeline --json     # JSON output
+
+# watch - Stream events
+python3 main.py watch               # All events
+python3 main.py watch --pattern organ.evolved  # Specific events
+```
+
+### Example Output
+
+```bash
+$ python3 main.py status
+
+Robinson (713d8815)
+========================================
+Status:      HEALTHY
+Uptime:      3600s
+DNA:         56271deda1e156e0
+
+Organs:      3/3 healthy
+Goals:       2/4 satisfied
+Evolutions:  3
+Pending:     0
+
+$ python3 main.py organs
+
+Organs:
+------------------------------------------------------------
+  ● ✓  soma.perception.observer
+  ● ✓  soma.memory.journal
+  ● !  soma.interface.dashboard
+        └─ Connection refused on port 5000...
+
+$ python3 main.py identity
+
+Instance Identity:
+----------------------------------------
+ID:       713d8815-6867-409c-87a1-a2ae27aa3276
+Name:     Robinson
+Genesis:  2026-01-30T08:28:34.921116Z
+Lineage:  56271deda1e156e0
+```
 
 ### Reset Behavior
 
@@ -321,7 +406,8 @@ python3 -m pytest tests/unit/test_bus.py::TestEventBus::test_subscribe_and_publi
 | Genealogy | 4 | Git init, commit, revert |
 | Auto-Immune | 3 | Revert triggers, failure handling |
 | **Integration** | **28** | Code validation, circuit breaker, goals, config |
-| **Total** | **89** | All passing |
+| Observability | 20 | Identity, Beacon, Observer, thread-safety |
+| **Total** | **109** | All passing |
 
 ### Code Quality
 

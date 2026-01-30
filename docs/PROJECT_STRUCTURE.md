@@ -8,9 +8,10 @@ Complete breakdown of the SEAA codebase after the A+ Grade refactor.
 
 ```
 sutraworks-SEAA/
-├── main.py                     # Entry point with CLI
+├── main.py                     # Entry point with CLI commands
 ├── config.yaml                 # System configuration
 ├── dna.json                    # Persistent DNA state
+├── .identity.json              # Instance identity (survives reset)
 ├── pyproject.toml              # Build configuration & dependencies
 ├── requirements.txt            # Legacy requirements (optional)
 ├── README.md                   # Main documentation
@@ -50,7 +51,11 @@ seaa/
 │   ├── assimilator.py          # Dynamic module loader
 │   ├── materializer.py         # Atomic file writer
 │   ├── immunity.py             # Error recovery & healing
-│   └── genealogy.py            # Evolutionary memory (Git)
+│   ├── genealogy.py            # Evolutionary memory (Git)
+│   ├── identity.py             # Instance identity (survives reset)
+│   ├── beacon.py               # Health endpoint (mesh-ready)
+│   ├── observer.py             # Local introspection + events
+│   └── protocols.py            # Observable contracts
 │
 ├── cortex/                     # 🧠 The Mind
 │   ├── __init__.py
@@ -84,32 +89,39 @@ soma/                           # 🫀 The Evolved Body
 │   ├── __init__.py
 │   └── journal.py              # Event logger
 │
-└── interface/                  # UI/API
-    ├── __init__.py
-    └── dashboard.py            # Streamlit dashboard
+├── interface/                  # UI/API (evolvable)
+│   ├── __init__.py
+│   └── dashboard.py            # Web dashboard
+│
+├── extensions/                 # Custom metrics (evolvable)
+│   └── __init__.py
+│
+└── mesh/                       # Fleet discovery (evolvable)
+    └── __init__.py
 ```
 
-> **Note**: The contents of `soma/` are examples. The actual organs depend on the system's goals.
+> **Note**: The contents of `soma/` are examples. The actual organs depend on the system's goals. Extensions and mesh directories can be evolved to add custom observability.
 
 ---
 
 ## Test Suite (`tests/`)
 
-Comprehensive testing with pytest - **89 tests total**.
+Comprehensive testing with pytest - **109 tests total**.
 
 ```
 tests/
 ├── __init__.py
 ├── conftest.py                 # Shared fixtures
 │
-├── unit/                       # Unit tests (61 tests)
+├── unit/                       # Unit tests (81 tests)
 │   ├── __init__.py
 │   ├── test_bus.py             # EventBus (12 tests)
 │   ├── test_schema.py          # DNA Schema (17 tests)
 │   ├── test_materializer.py    # Materializer (16 tests) - includes security tests
 │   ├── test_assimilator.py     # Assimilator (6 tests)
 │   ├── test_genealogy.py       # Git memory (4 tests)
-│   └── test_auto_immune.py     # Auto-revert (3 tests)
+│   ├── test_auto_immune.py     # Auto-revert (3 tests)
+│   └── test_observability.py   # Observability (20 tests) - identity, beacon, observer
 │
 └── integration/                # Integration tests (28 tests)
     ├── __init__.py
@@ -250,6 +262,10 @@ dev = [
 | **Materializer** | `seaa/kernel/materializer.py` | Atomic file writing + **path traversal protection** |
 | **Immunity** | `seaa/kernel/immunity.py` | Error recovery & healing |
 | **Genealogy** | `seaa/kernel/genealogy.py` | Evolutionary memory & rollback + **config validation** |
+| **Identity** | `seaa/kernel/identity.py` | Instance UUID, name, lineage - **survives reset** |
+| **Beacon** | `seaa/kernel/beacon.py` | Minimal health endpoint - **mesh-ready** |
+| **Observer** | `seaa/kernel/observer.py` | Local introspection + **event streaming** |
+| **Protocols** | `seaa/kernel/protocols.py` | Observable contracts for **mesh interoperability** |
 | **Architect** | `seaa/cortex/architect.py` | System designer + **LLM response validation** |
 | **PromptLoader** | `seaa/cortex/prompt_loader.py` | YAML template management |
 | **LLMGateway** | `seaa/connectors/llm_gateway.py` | LLM provider abstraction + **code validation & prompt sanitization** |
@@ -260,9 +276,10 @@ dev = [
 
 | File | Purpose |
 |------|---------|
-| `main.py` | CLI entry point with `--reset`, `--config`, `--log-level` |
+| `main.py` | CLI entry point with commands: status, organs, goals, identity, etc. |
 | `config.yaml` | System configuration (LLM, paths, security, logging) |
 | `dna.json` | Persistent state (goals, blueprint, failures, active modules) |
+| `.identity.json` | Instance identity (survives reset) |
 | `pyproject.toml` | Dependencies, build config, pytest settings |
 | `CLAUDE.md` | AI assistant context guide |
 
@@ -298,5 +315,6 @@ Genesis (orchestrator)
 | Assimilator | 6 | Loading, validation, batch |
 | Genealogy | 4 | Git init, commit, revert |
 | Auto-Immune | 3 | Revert triggers, failure handling |
+| Observability | 20 | Identity, Beacon, Observer, thread-safety, caching |
 | **Integration** | **28** | Code validation, circuit breaker, goals, config |
-| **Total** | **89** | **All passing** |
+| **Total** | **109** | **All passing** |

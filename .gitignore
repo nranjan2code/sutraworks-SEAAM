@@ -22,6 +22,7 @@ memory_journal.json
 # seaa/kernel/ is tracked.
 # seaa/cortex/ is tracked.
 dna.json
+.identity.json
 .dna_backups/
 .pytest_cache/
 *.bak

@@ -114,10 +114,11 @@ class TestDNA:
     def test_dna_tabula_rasa(self):
         """Test creating fresh DNA."""
         dna = DNA.create_tabula_rasa()
-        
+
         assert dna.system_name == "SEAA-TabulaRasa"
-        assert len(dna.goals) == 3
+        assert len(dna.goals) == 4  # perception, memory, observable, extensions
         assert dna.goals[0].description == "I must be able to perceive the file system."
+        assert dna.goals[2].description == "I must be observable."
     
     def test_dna_add_blueprint(self):
         """Test adding a blueprint."""

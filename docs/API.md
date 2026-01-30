@@ -452,6 +452,290 @@ genesis.shutdown()
 
 ---
 
+### Identity (`seaa.kernel.identity`)
+
+```python
+from seaa.kernel.identity import (
+    InstanceIdentity,
+    IdentityManager,
+    get_identity,
+    set_name,
+    get_instance_id,
+    get_instance_name,
+)
+```
+
+#### `InstanceIdentity`
+
+Dataclass representing the instance's identity.
+
+```python
+@dataclass
+class InstanceIdentity:
+    id: str           # UUID, never changes
+    name: str         # Human-friendly name
+    genesis_time: str # ISO timestamp of first creation
+    lineage: str      # Hash of initial DNA state
+    parent_id: Optional[str] = None  # If spawned from another
+```
+
+#### Module-level Functions
+
+```python
+# Get the identity (creates if not exists)
+identity = get_identity()
+print(identity.id)       # "713d8815-6867-409c-87a1-a2ae27aa3276"
+print(identity.name)     # "SEAA-713d8815"
+print(identity.lineage)  # "56271deda1e156e0"
+
+# Set instance name
+identity = set_name("Robinson")
+
+# Get just the ID or name
+instance_id = get_instance_id()
+instance_name = get_instance_name()
+```
+
+---
+
+### Beacon (`seaa.kernel.beacon`)
+
+```python
+from seaa.kernel.beacon import Beacon, get_beacon, get_vitals, is_healthy
+```
+
+#### `Beacon`
+
+Minimal health endpoint implementing the Observable protocol.
+
+```python
+beacon = Beacon(dna_path="dna.json")
+
+# Get essential health metrics
+vitals = beacon.get_vitals()
+print(vitals.organ_count)      # 3
+print(vitals.healthy_organs)   # 3
+print(vitals.goals_satisfied)  # 2
+
+# Get organ status
+for organ in beacon.get_organs():
+    print(f"{organ.name}: {organ.health.value}")
+
+# Get goal satisfaction
+for goal in beacon.get_goals():
+    print(f"{goal.description}: {goal.satisfied}")
+
+# Get failures
+for failure in beacon.get_failures():
+    print(f"{failure.module}: {failure.message}")
+
+# Quick health check
+if beacon.is_healthy():
+    print("All organs healthy")
+```
+
+#### Module-level Functions
+
+```python
+# Get vitals from global beacon
+vitals = get_vitals()
+
+# Quick health check
+if is_healthy():
+    print("System healthy")
+
+# Get beacon singleton
+beacon = get_beacon()
+```
+
+---
+
+### Observer (`seaa.kernel.observer`)
+
+```python
+from seaa.kernel.observer import Observer, get_observer, stream_events, get_timeline
+```
+
+#### `Observer`
+
+Extended local observer with event streaming and timeline.
+
+```python
+observer = Observer(dna_path="dna.json")
+
+# All Beacon methods are available
+vitals = observer.get_vitals()
+organs = observer.get_organs()
+goals = observer.get_goals()
+
+# Stream events in real-time (blocks)
+for event in observer.stream_events():
+    print(f"{event.event_type}: {event.data}")
+
+# Stream specific event types
+for event in observer.stream_events(["organ.evolved", "system.heartbeat"]):
+    print(event)
+
+# Get evolution timeline
+for entry in observer.get_timeline(limit=20):
+    print(f"{entry['type']}: {entry['organ']} at {entry['timestamp']}")
+
+# Watch for DNA changes
+def on_change(dna):
+    print(f"DNA changed: {dna.metadata.total_evolutions} evolutions")
+
+unsub = observer.watch_changes(on_change)
+# ... later
+unsub()
+
+# Get comprehensive system summary
+summary = observer.get_system_summary()
+print(summary["identity"]["name"])
+print(summary["health"]["status"])
+
+# Get specific organ details
+detail = observer.get_organ_detail("soma.perception.observer")
+print(detail["health"])
+print(detail["blueprint"]["description"])
+```
+
+#### Module-level Functions
+
+```python
+# Stream events from global observer
+for event in stream_events():
+    print(event)
+
+# Get timeline
+events = get_timeline(limit=10)
+
+# Get observer singleton
+observer = get_observer()
+```
+
+---
+
+### Protocols (`seaa.kernel.protocols`)
+
+```python
+from seaa.kernel.protocols import (
+    Observable,
+    LocalObservable,
+    MeshDiscoverable,
+    Vitals,
+    OrganInfo,
+    OrganHealth,
+    GoalInfo,
+    FailureInfo,
+    MeshNodeInfo,
+)
+```
+
+#### `Vitals`
+
+Essential health metrics for an instance.
+
+```python
+@dataclass
+class Vitals:
+    instance_id: str
+    instance_name: str
+    alive: bool
+    uptime_seconds: float
+    dna_hash: str
+    organ_count: int
+    healthy_organs: int
+    sick_organs: int
+    pending_blueprints: int
+    goals_satisfied: int
+    goals_total: int
+    total_evolutions: int
+    total_failures: int
+    last_evolution: Optional[str]
+
+    @property
+    def health_ratio(self) -> float:
+        """Ratio of healthy to total organs."""
+
+    @property
+    def goal_progress(self) -> float:
+        """Ratio of satisfied to total goals."""
+```
+
+#### `OrganHealth`
+
+Enum for organ health status.
+
+```python
+class OrganHealth(str, Enum):
+    HEALTHY = "healthy"    # Running normally
+    DEGRADED = "degraded"  # Running but has failures
+    SICK = "sick"          # Circuit breaker open
+    STOPPED = "stopped"    # Not running
+```
+
+#### `OrganInfo`
+
+Information about a single organ.
+
+```python
+@dataclass
+class OrganInfo:
+    name: str
+    health: OrganHealth
+    active: bool
+    failure_count: int
+    last_error: Optional[str]
+    circuit_open: bool
+```
+
+#### `GoalInfo`
+
+Information about a goal.
+
+```python
+@dataclass
+class GoalInfo:
+    description: str
+    priority: int
+    satisfied: bool
+    required_organs: List[str]
+    matching_organs: List[str]  # Active organs matching patterns
+```
+
+#### `FailureInfo`
+
+Information about a failure.
+
+```python
+@dataclass
+class FailureInfo:
+    module: str
+    error_type: str
+    message: str
+    attempts: int
+    circuit_open: bool
+    timestamp: str
+```
+
+#### Protocol Classes
+
+```python
+# Type checking with protocols
+from seaa.kernel.protocols import Observable
+
+def query_any_instance(obs: Observable) -> int:
+    """Works with Beacon, Observer, or any Observable."""
+    vitals = obs.get_vitals()
+    return vitals.organ_count
+
+# Check if an object implements Observable
+if isinstance(beacon, Observable):
+    print("Beacon implements Observable")
+```
+
+---
+
 ## Cortex Module
 
 Located in `seaa/cortex/`

@@ -571,9 +571,179 @@ SEAA follows a **security-first** design with defense in depth:
 
 ---
 
-## 9. Testing Architecture
+## 9. Observability Layer
 
-The test suite covers all critical components with **89 tests**.
+SEAA includes a built-in observability layer that provides introspection into the running system—even when soma is broken.
+
+### Architecture: Static vs Evolvable
+
+```mermaid
+graph TD
+    subgraph KERNEL [Kernel - Static, Always Works]
+        Identity[identity.py<br/>Who am I?]
+        Beacon[beacon.py<br/>Health endpoint]
+        Observer[observer.py<br/>Local introspection]
+        Protocols[protocols.py<br/>Observable contracts]
+    end
+
+    subgraph SOMA [Soma - Evolvable, Can Reset]
+        Interface[soma.interface.*<br/>Rich dashboards]
+        Extensions[soma.extensions.*<br/>Custom metrics]
+        Mesh[soma.mesh.*<br/>Fleet discovery]
+    end
+
+    CLI[CLI Commands] --> Observer
+    Observer --> Beacon
+    Beacon --> Identity
+    Beacon --> DNA[(dna.json)]
+
+    Interface --> Observer
+    Mesh --> Beacon
+```
+
+### `identity.py` - Instance Identity
+
+Manages the unique identity of this SEAA instance. Identity is **separate from DNA** and persists across resets.
+
+```python
+@dataclass
+class InstanceIdentity:
+    id: str           # UUID, never changes
+    name: str         # Human-friendly name (can be changed)
+    genesis_time: str # When this instance was first created
+    lineage: str      # Hash of initial DNA (genealogy)
+    parent_id: Optional[str] = None  # If spawned from another instance
+```
+
+**Key properties:**
+- Stored in `.identity.json` (NOT `dna.json`)
+- Survives `--reset` command
+- Enables mesh node identification
+- Tracks genealogy/lineage
+
+### `protocols.py` - Observable Contracts
+
+Defines the universal contracts that any SEAA instance must implement to be observable:
+
+```python
+@runtime_checkable
+class Observable(Protocol):
+    """Any class implementing this can be observed."""
+    def get_vitals(self) -> Vitals: ...
+    def get_organs(self) -> List[OrganInfo]: ...
+    def get_goals(self) -> List[GoalInfo]: ...
+    def get_failures(self) -> List[FailureInfo]: ...
+
+@runtime_checkable
+class LocalObservable(Observable, Protocol):
+    """Extended protocol for local observation."""
+    def stream_events(self, patterns: Optional[List[str]] = None) -> Iterator[Event]: ...
+    def get_timeline(self, limit: int = 20) -> List[Dict[str, Any]]: ...
+
+@runtime_checkable
+class MeshDiscoverable(Protocol):
+    """Protocol for mesh-discoverable instances."""
+    def announce(self) -> MeshNodeInfo: ...
+    def discover(self) -> List[MeshNodeInfo]: ...
+```
+
+**Data Classes:**
+- `Vitals` - Essential health metrics (mesh-queryable)
+- `OrganInfo` - Organ name, health status, failure count
+- `GoalInfo` - Goal description, satisfaction status
+- `FailureInfo` - Module, error type, circuit state
+- `MeshNodeInfo` - Instance ID, endpoint, cached vitals
+
+### `beacon.py` - Minimal Health Endpoint
+
+Implements the `Observable` protocol. This is the **universal query interface** that other instances can call.
+
+```python
+class Beacon(Observable):
+    """The immutable health beacon for a SEAA instance."""
+
+    def get_vitals(self) -> Vitals:
+        """Essential health metrics for mesh protocols."""
+
+    def get_organs(self) -> List[OrganInfo]:
+        """Status of all organs with health indicators."""
+
+    def get_goals(self) -> List[GoalInfo]:
+        """Goals with satisfaction status and matching organs."""
+
+    def get_failures(self) -> List[FailureInfo]:
+        """Current failure records with circuit breaker state."""
+```
+
+**Key properties:**
+- Read-only (never modifies state)
+- Works even when soma is broken
+- Designed for mesh queries
+
+### `observer.py` - Extended Local Observation
+
+Wraps Beacon and adds local-only capabilities:
+
+```python
+class Observer(LocalObservable):
+    """Extended local observer for SEAA."""
+
+    # Delegates to Beacon
+    def get_vitals(self) -> Vitals: ...
+    def get_organs(self) -> List[OrganInfo]: ...
+
+    # Local-only features
+    def stream_events(self, patterns: Optional[List[str]] = None) -> Iterator[Event]:
+        """Stream events in real-time from EventBus."""
+
+    def get_timeline(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """Get recent evolution timeline."""
+
+    def watch_changes(self, callback: Callable[[DNA], None]) -> Callable[[], None]:
+        """Register callback for DNA changes."""
+
+    def get_system_summary(self) -> Dict[str, Any]:
+        """Comprehensive system summary for dashboards."""
+```
+
+### CLI Commands
+
+The observability layer is exposed via CLI commands in `main.py`:
+
+| Command | Purpose |
+|---------|---------|
+| `status` | System health + vitals |
+| `organs` | List organs with health |
+| `goals` | Goal satisfaction progress |
+| `failures` | Failure records |
+| `identity` | Show/set instance identity |
+| `timeline` | Evolution history |
+| `watch` | Live event stream |
+
+All commands support `--json` for programmatic access.
+
+### Design Rationale
+
+**Why separate from DNA?**
+- Identity must survive resets
+- DNA is mutable state; identity is not
+- Enables mesh coordination without DNA coupling
+
+**Why in kernel?**
+- Must work when soma is broken
+- Provides universal contract
+- Enables mesh without evolved organs
+
+**Why protocols?**
+- Mesh instances can query each other
+- Type-safe contracts
+- Evolvable implementations
+
+---
+
+## 10. Testing Architecture
+
+The test suite covers all critical components with **109 tests**.
 
 ```
 tests/

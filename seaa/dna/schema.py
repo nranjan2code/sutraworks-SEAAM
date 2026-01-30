@@ -443,15 +443,23 @@ class DNA:
         default_goals = goals or [
             {
                 "description": "I must be able to perceive the file system.",
+                "priority": 1,
                 "required_organs": ["soma.perception.*"],
             },
             {
                 "description": "I must have a memory.",
+                "priority": 1,
                 "required_organs": ["soma.memory.*"],
             },
             {
-                "description": "I must have a visual dashboard.",
+                "description": "I must be observable.",
+                "priority": 2,
                 "required_organs": ["soma.interface.*"],
+            },
+            {
+                "description": "I should be able to extend my observation capabilities.",
+                "priority": 3,
+                "required_organs": ["soma.extensions.*"],
             },
         ]
 
