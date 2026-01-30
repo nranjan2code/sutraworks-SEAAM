@@ -10,7 +10,7 @@ Centralized configuration with:
 
 import os
 from pathlib import Path
-from typing import Any, Optional, Union, List
+from typing import Any, Dict, Optional, Union, List
 from dataclasses import dataclass, field
 
 # Try to import yaml, fall back to basic dict if not available
@@ -64,13 +64,22 @@ class MetabolismConfig:
     cycle_interval_seconds: int = 30
     max_organs_per_cycle: int = 3
     reflection_timeout_seconds: int = 60
+    max_concurrent_organs: int = 20
+    max_total_organs: int = 50
+
+
+@dataclass
+class CircuitBreakerConfig:
+    """Circuit breaker configuration for failing organs."""
+    max_attempts: int = 3
+    cooldown_minutes: int = 30
 
 
 @dataclass
 class SecurityConfig:
     """Security configuration."""
     allow_pip_install: bool = False  # DISABLED BY DEFAULT for security
-    allowed_pip_packages: list[str] = field(default_factory=lambda: [
+    allowed_pip_packages: List[str] = field(default_factory=lambda: [
         "watchdog",
         "streamlit",
         "flask",
@@ -78,7 +87,7 @@ class SecurityConfig:
         "sqlite3",
         "requests",
     ])
-    protected_prefixes: list[str] = field(default_factory=lambda: [
+    protected_prefixes: List[str] = field(default_factory=lambda: [
         "seaam.",
         "seaam/",
     ])
@@ -109,13 +118,14 @@ class SEAAMConfig:
     security: SecurityConfig = field(default_factory=SecurityConfig)
     genealogy: GenealogyConfig = field(default_factory=GenealogyConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    circuit_breaker: CircuitBreakerConfig = field(default_factory=CircuitBreakerConfig)
     
     # Metadata
     version: str = "1.0.0"
     environment: str = "development"
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "SEAAMConfig":
+    def from_dict(cls, data: Dict[str, Any]) -> "SEAAMConfig":
         """Create config from a dictionary."""
         config = cls()
         
@@ -154,12 +164,17 @@ class SEAAMConfig:
             for key, value in data["genealogy"].items():
                 if hasattr(config.genealogy, key):
                     setattr(config.genealogy, key, value)
-        
+
+        if "circuit_breaker" in data:
+            for key, value in data["circuit_breaker"].items():
+                if hasattr(config.circuit_breaker, key):
+                    setattr(config.circuit_breaker, key, value)
+
         if "version" in data:
             config.version = data["version"]
         if "environment" in data:
             config.environment = data["environment"]
-        
+
         return config
     
     @classmethod
@@ -220,7 +235,53 @@ class SEAAMConfig:
         if os.environ.get("SEAAM_ENV"):
             self.environment = os.environ["SEAAM_ENV"]
     
-    def to_dict(self) -> dict[str, Any]:
+    def validate(self) -> List[str]:
+        """
+        Validate configuration values.
+
+        Returns:
+            List of error messages (empty if valid)
+        """
+        errors = []
+
+        # LLM temperature must be 0-2
+        if not (0 <= self.llm.temperature <= 2):
+            errors.append(f"LLM temperature must be 0-2, got {self.llm.temperature}")
+
+        # Timeouts must be sensible
+        if self.llm.timeout_seconds < 10:
+            errors.append(f"LLM timeout must be >= 10 seconds, got {self.llm.timeout_seconds}")
+
+        if self.metabolism.cycle_interval_seconds < 5:
+            errors.append(f"Metabolism cycle interval must be >= 5 seconds, got {self.metabolism.cycle_interval_seconds}")
+
+        if self.metabolism.reflection_timeout_seconds < 10:
+            errors.append(f"Reflection timeout must be >= 10 seconds, got {self.metabolism.reflection_timeout_seconds}")
+
+        # Resource limits must be sensible
+        if self.metabolism.max_total_organs < self.metabolism.max_concurrent_organs:
+            errors.append(
+                f"max_total_organs ({self.metabolism.max_total_organs}) must be >= "
+                f"max_concurrent_organs ({self.metabolism.max_concurrent_organs})"
+            )
+
+        if self.metabolism.max_organs_per_cycle < 1:
+            errors.append(f"max_organs_per_cycle must be >= 1, got {self.metabolism.max_organs_per_cycle}")
+
+        # Circuit breaker
+        if self.circuit_breaker.max_attempts < 1:
+            errors.append(f"Circuit breaker max_attempts must be >= 1, got {self.circuit_breaker.max_attempts}")
+
+        if self.circuit_breaker.cooldown_minutes < 1:
+            errors.append(f"Circuit breaker cooldown_minutes must be >= 1, got {self.circuit_breaker.cooldown_minutes}")
+
+        # LLM retries
+        if self.llm.max_retries < 1:
+            errors.append(f"LLM max_retries must be >= 1, got {self.llm.max_retries}")
+
+        return errors
+
+    def to_dict(self) -> Dict[str, Any]:
         """Export config to dictionary."""
         return {
             "version": self.version,
@@ -242,6 +303,8 @@ class SEAAMConfig:
             "metabolism": {
                 "cycle_interval_seconds": self.metabolism.cycle_interval_seconds,
                 "max_organs_per_cycle": self.metabolism.max_organs_per_cycle,
+                "max_concurrent_organs": self.metabolism.max_concurrent_organs,
+                "max_total_organs": self.metabolism.max_total_organs,
             },
             "security": {
                 "allow_pip_install": self.security.allow_pip_install,
@@ -255,6 +318,10 @@ class SEAAMConfig:
             "logging": {
                 "level": self.logging.level,
                 "format": self.logging.format,
+            },
+            "circuit_breaker": {
+                "max_attempts": self.circuit_breaker.max_attempts,
+                "cooldown_minutes": self.circuit_breaker.cooldown_minutes,
             },
         }
 

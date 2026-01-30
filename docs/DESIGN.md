@@ -79,20 +79,24 @@ The DNA is the **single source of truth** for the organism. It persists across r
   <img src="images/seaam_dna_structure.png" alt="DNA Structure" width="60%">
 </div>
 
-### Current Schema (v1.0)
+### Current Schema (v1.1 - with Circuit Breaker & Measurable Goals)
 
 ```json
 {
   "goals": [
     {
-      "text": "I must be able to perceive the file system.",
+      "description": "I must be able to perceive the file system.",
+      "priority": 1,
+      "satisfied": false,
       "created_at": "2026-01-30T12:00:00Z",
-      "achieved": false
+      "required_organs": ["soma.perception.*"]
     },
     {
-      "text": "I must have persistent memory.",
+      "description": "I must have persistent memory.",
+      "priority": 2,
+      "satisfied": false,
       "created_at": "2026-01-30T12:00:00Z",
-      "achieved": false
+      "required_organs": ["soma.memory.*"]
     }
   ],
   "blueprint": {
@@ -107,10 +111,12 @@ The DNA is the **single source of truth** for the organism. It persists across r
     {
       "module_name": "soma.perception.observer",
       "error_type": "import",
-      "message": "No module named 'watchdog'",
+      "error_message": "No module named 'watchdog'",
       "context": {"attempt": 1},
       "timestamp": "2026-01-30T12:06:00Z",
-      "attempt_count": 1
+      "attempt_count": 1,
+      "circuit_open": false,
+      "circuit_opened_at": null
     }
   ],
   "active_modules": [
@@ -120,8 +126,9 @@ The DNA is the **single source of truth** for the organism. It persists across r
     "system_version": "1.0.0",
     "system_name": "SEAAM",
     "created_at": "2026-01-30T12:00:00Z",
-    "last_evolution_time": "2026-01-30T12:10:00Z",
-    "evolution_count": 3,
+    "last_modified": "2026-01-30T12:10:00Z",
+    "total_evolutions": 3,
+    "total_failures": 1,
     "last_successful_organ": "soma.perception.observer"
   }
 }
@@ -131,13 +138,61 @@ The DNA is the **single source of truth** for the organism. It persists across r
 
 | Operation | Method | Description |
 |-----------|--------|-------------|
-| Add Goal | `dna.add_goal(text)` | Add a new goal |
+| Add Goal | `dna.goals.append(Goal(...))` | Add a new goal |
 | Add Blueprint | `dna.add_blueprint(name, desc)` | Register organ design |
-| Update Blueprint | `dna.update_blueprint(name, desc)` | Modify existing design |
-| Add Failure | `dna.add_failure(name, type, msg)` | Log an error |
+| Update Blueprint | `dna.add_blueprint(name, desc)` | Modify existing (auto-increments version) |
+| Add Failure | `dna.add_failure(name, type, msg)` | Log an error (increments attempt_count) |
 | Clear Failure | `dna.clear_failure(name)` | Remove after fix |
 | Mark Active | `dna.mark_active(name)` | Track running organs |
+| Mark Inactive | `dna.mark_inactive(name)` | Remove from active |
 | Get Pending | `dna.get_pending_blueprints()` | Blueprints not yet active |
+| **Circuit Breaker** | | |
+| Should Attempt | `dna.should_attempt(name, max, cooldown)` | Check if evolution allowed |
+| Open Circuit | `dna.open_circuit(name)` | Disable evolution for module |
+| Is Circuit Open | `dna.is_circuit_open(name)` | Check circuit state |
+| Reset Circuit | `dna.reset_circuit(name)` | Manual reset |
+| **Goal Satisfaction** | | |
+| Check Goals | `dna.check_goal_satisfaction()` | Auto-satisfy goals by pattern |
+
+### Circuit Breaker Pattern
+
+The DNA implements a circuit breaker to prevent infinite retry loops:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Closed: Initial
+    Closed --> Closed: attempt < max
+    Closed --> Open: attempt >= max
+    Open --> Open: cooldown not passed
+    Open --> Closed: cooldown passed
+```
+
+```python
+# Check before evolution
+if not dna.should_attempt(organ_name, max_attempts=3, cooldown_minutes=30):
+    logger.warning(f"Circuit OPEN for {organ_name}, skipping")
+    return False
+
+# Circuit opens automatically when max_attempts reached
+# After cooldown_minutes, circuit auto-closes on next check
+```
+
+### Measurable Goals
+
+Goals can specify `required_organs` patterns for automatic satisfaction:
+
+```python
+Goal(
+    description="I must perceive the file system.",
+    required_organs=["soma.perception.*"]  # Wildcard pattern
+)
+
+# When soma.perception.observer becomes active:
+newly_satisfied = dna.check_goal_satisfaction()  # Returns 1
+assert dna.goals[0].satisfied == True
+```
+
+Pattern matching uses `fnmatch` - wildcards like `*` match any sequence.
 
 ### Legacy Format Migration
 
@@ -287,7 +342,7 @@ def _import_module(self, module_name: str):
 
 ## 5. Gateway Verification Layer
 
-To prevent "Dead Organs" (code that can't be assimilated), the LLM Gateway performs structural validation.
+To prevent "Dead Organs" (code that can't be assimilated), the LLM Gateway performs **comprehensive AST-based validation**.
 
 ### Validation Flow
 
@@ -295,45 +350,60 @@ To prevent "Dead Organs" (code that can't be assimilated), the LLM Gateway perfo
 flowchart TD
     A[Generate Prompt] --> B[Call LLM]
     B --> C[Clean Response]
-    C --> D{Has start()?}
-    
-    D -->|Yes| E{Correct Signature?}
-    D -->|No| F[Add Error Feedback]
-    
-    E -->|Yes| G[Return Code]
-    E -->|No| F
-    
-    F --> H{Retries Left?}
-    H -->|Yes| B
-    H -->|No| I[Return None / Log]
+    C --> D{AST Parse?}
+
+    D -->|Syntax Error| F[Add Error Feedback]
+    D -->|OK| E{Forbidden Imports?}
+
+    E -->|Yes| F
+    E -->|No| G{Has start()?}
+
+    G -->|No| F
+    G -->|Yes| H{Zero Required Args?}
+
+    H -->|No| F
+    H -->|Yes| I[Return Valid Code]
+
+    F --> J{Retries Left?}
+    J -->|Yes| B
+    J -->|No| K[Return None / Log]
 ```
 
-### Code Cleaning
+### Code Validation (`validate_code()`)
 
-The Gateway cleans LLM responses:
+The Gateway performs three-layer validation:
 
 ```python
-def _clean_code(self, code: str) -> str:
-    # Remove markdown code fences
-    code = re.sub(r'^```python\s*\n?', '', code)
-    code = re.sub(r'^```\w*\s*\n?', '', code)
-    code = re.sub(r'\n?```$', '', code)
-    
-    # Remove conversational prefix/suffix
-    lines = code.split('\n')
-    # ... filter out "Here's the code:" etc.
-    
-    return code.strip()
+def validate_code(self, code: str, module_name: str) -> Tuple[bool, Optional[str]]:
+    # 1. Syntax check via AST
+    try:
+        tree = ast.parse(code)
+    except SyntaxError as e:
+        return False, f"Syntax error at line {e.lineno}: {e.msg}"
+
+    # 2. Forbidden imports check
+    FORBIDDEN_IMPORTS = frozenset([
+        'pip', 'subprocess', 'os.system', 'os.popen',
+        'eval', 'exec', 'compile', '__import__',
+    ])
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name in FORBIDDEN_IMPORTS:
+                    return False, f"Forbidden import: {alias.name}"
+
+    # 3. start() signature validation
+    return self._validate_start_signature(tree)
 ```
 
-### Retry Protocol
+### Retry Protocol with Specific Feedback
 
-| Attempt | Action |
-|---------|--------|
-| 1 | Generate with base prompt |
-| 2 | Re-prompt with error: "Missing start() function" |
-| 3 | Re-prompt with detailed requirements |
-| 4+ | Fail and log to DNA |
+| Attempt | Error Type | Feedback |
+|---------|------------|----------|
+| 1 | Syntax Error | "Fix the syntax error. Return valid Python." |
+| 2 | Forbidden Import | "Remove pip/subprocess/eval. Use only safe imports." |
+| 3 | Missing start() | "Add 'def start():' at module level." |
+| 4+ | Any | Fail and log to DNA |
 
 ---
 
@@ -476,8 +546,21 @@ Priority (highest to lowest):
 class LLMConfig:
     provider: str = "ollama"
     model: str = "qwen2.5-coder:14b"
-    temperature: float = 0.1
-    max_retries: int = 3
+    temperature: float = 0.1  # Validated: 0-2
+    max_retries: int = 3      # Validated: >= 1
+    timeout_seconds: int = 120
+
+@dataclass
+class MetabolismConfig:
+    cycle_interval_seconds: int = 30
+    max_organs_per_cycle: int = 3
+    max_concurrent_organs: int = 20  # Resource limit
+    max_total_organs: int = 50       # Resource limit
+
+@dataclass
+class CircuitBreakerConfig:
+    max_attempts: int = 3        # Failures before circuit opens
+    cooldown_minutes: int = 30   # Wait before retry
 
 @dataclass
 class SecurityConfig:
@@ -489,8 +572,32 @@ class SecurityConfig:
 class SEAAMConfig:
     llm: LLMConfig
     paths: PathsConfig
+    metabolism: MetabolismConfig
+    circuit_breaker: CircuitBreakerConfig
     security: SecurityConfig
     logging: LoggingConfig
+
+    def validate(self) -> List[str]:
+        """Returns list of validation errors (empty if valid)."""
+        errors = []
+        if not (0 <= self.llm.temperature <= 2):
+            errors.append("temperature must be 0-2")
+        if self.metabolism.max_total_organs < self.metabolism.max_concurrent_organs:
+            errors.append("max_total_organs must be >= max_concurrent_organs")
+        # ... more checks
+        return errors
+```
+
+### Configuration Validation
+
+Genesis validates configuration at startup:
+
+```python
+class Genesis:
+    def __init__(self):
+        config_errors = config.validate()
+        if config_errors:
+            raise ValueError(f"Invalid config: {config_errors}")
 ```
 
 ---

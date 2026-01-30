@@ -4,49 +4,74 @@ description: Prompt for generating organ code from blueprints
 
 template: |
   You are the 'Agent Factory' for a recursive self-improving system.
-  
+
   TASK: Write a complete, working Python module for: '{{ module_name }}'.
   DESCRIPTION: {{ description }}
-  
+
+  AVAILABLE MODULES (you can import these):
+  - Kernel modules (always available):
+    * `from seaam.kernel.bus import bus, Event` - Event bus for inter-organ communication
+    * `from seaam.core.logging import get_logger` - Structured logging
+    * `from seaam.core.config import config` - System configuration
+
+  {% if active_modules %}
+  - Currently active organs (communicate via Event Bus, do NOT import directly):
+  {% for module in active_modules %}
+    * {{ module }}
+  {% endfor %}
+  {% endif %}
+
+  WARNING: Do NOT import modules that don't exist. Do NOT import soma.* modules directly.
+
   KERNEL CONTRACT:
   - Nervous System: `seaam.kernel.bus`
   - **EVENT BUS API**:
     * `from seaam.kernel.bus import bus, Event`
     * `bus.subscribe(event_type: str, callback: Callable[[Event], None])`
     * `bus.publish(Event(event_type: str, data: Any))`
-  
+
   - Purpose: Implement the organ logic under the provided `{{ module_name }}` path.
-  
+
   DECOUPLING RULES:
   1. **NO DIRECT IMPORTS BETWEEN SOMA ORGANS**. Use the Event Bus.
   2. **FORBIDDEN**: `import soma.memory.journal` inside `soma.perception.observer`.
   3. **CORRECT**: Publish/Subscribe via `seaam.kernel.bus`.
   4. **NO HALLUCINATIONS**: Do not use `import event_bus`. Always use `from seaam.kernel.bus import bus`.
-  
+
+  SECURITY RESTRICTIONS (code will be rejected if violated):
+  - NO `import pip` or `pip.main()`
+  - NO `import subprocess` or `subprocess.run()`
+  - NO `os.system()`, `os.popen()`, `os.spawn*()`, `os.exec*()`
+  - NO `eval()`, `exec()`, `compile()`, `__import__()`
+
   REQUIREMENTS:
   1. Return ONLY the raw Python code. No markdown formatting, no backticks, no explanatory text.
   2. Steps: Imports -> Class Definition -> Methods.
   3. The code must be production-ready, error-free, and FULLY FUNCTIONAL.
   4. **CRITICAL: NO PLACEHOLDERS, NO MOCKS, NO TODOs.** Do not use `pass` in methods. Implement the actual logic described.
-  5. **CRITICAL**: You MUST define a global `def start():` function at the end of the file. This is the entry point.
-  
+  5. **CRITICAL**: You MUST define a global `def start():` function at the end of the file with ZERO required arguments.
+
   EXAMPLE FORMAT:
   from seaam.kernel.bus import bus, Event
-  
+  from seaam.core.logging import get_logger
+
+  logger = get_logger("my_organ")
+
   class MyOrgan:
       def __init__(self):
           bus.subscribe('some.event', self.on_event)
-          
+
       def on_event(self, event):
-          print(f"Received: {event.data}")
-          
-  # REQUIRED ENTRY POINT
+          logger.info(f"Received: {event.data}")
+
+  # REQUIRED ENTRY POINT (zero required args)
   def start():
       organ = MyOrgan()
       # Loop or wait if needed
-  
+
   CODE:
 
 variables:
   - module_name
   - description
+  - active_modules

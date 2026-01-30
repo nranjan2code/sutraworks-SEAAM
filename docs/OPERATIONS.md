@@ -112,6 +112,13 @@ metabolism:
   cycle_interval_seconds: 30    # Time between evolution cycles
   max_organs_per_cycle: 3       # Max organs to evolve per cycle
   reflection_timeout_seconds: 60
+  max_concurrent_organs: 20     # Max running at once (resource limit)
+  max_total_organs: 50          # Max ever created (resource limit)
+
+# Circuit Breaker (prevents infinite retry loops)
+circuit_breaker:
+  max_attempts: 3               # Failures before circuit opens
+  cooldown_minutes: 30          # Wait time before retry allowed
 
 # Evolutionary Memory
 genealogy:
@@ -151,6 +158,7 @@ environment: development        # 'development' or 'production'
 | `SEAAM_LOG_FORMAT` | Log format | `json` |
 | `SEAAM_ALLOW_PIP` | Enable pip installs | `true` |
 | `SEAAM_ENV` | Environment name | `production` |
+| `SEAAM_WATCH_PATH` | Override observer watch path | `/data/watched` |
 | `OLLAMA_URL` | Custom Ollama endpoint | `http://gpu-server:11434/api/generate` |
 | `OLLAMA_MODEL` | Override Ollama model | `codellama:34b` |
 | `GEMINI_API_KEY` | Enable Gemini fallback | `your-api-key` |
@@ -185,6 +193,54 @@ You can also manually revert if needed:
 ```bash
 cd soma
 git reset --hard HEAD^
+```
+
+---
+
+## 🔌 Circuit Breaker
+
+The circuit breaker prevents infinite retry loops when organs repeatedly fail.
+
+### How It Works
+
+1. **Closed State** (normal): Evolution attempts proceed
+2. **After max_attempts failures**: Circuit **opens**
+3. **Open State**: Evolution skipped with log warning
+4. **After cooldown_minutes**: Circuit auto-closes, retry allowed
+
+### Configuration
+
+```yaml
+circuit_breaker:
+  max_attempts: 3        # Default: 3 failures opens circuit
+  cooldown_minutes: 30   # Default: 30 min before retry
+```
+
+### Manual Circuit Reset
+
+```python
+# Via Python
+from seaam.dna import DNA
+from seaam.dna.repository import DNARepository
+
+repo = DNARepository("dna.json")
+dna = repo.load_or_create()
+dna.reset_circuit("soma.failing.module")
+repo.save(dna)
+```
+
+Or edit `dna.json` directly:
+```json
+{
+  "failures": [
+    {
+      "module_name": "soma.failing.module",
+      "circuit_open": false,        // Set to false
+      "circuit_opened_at": null,    // Set to null
+      "attempt_count": 0            // Reset to 0
+    }
+  ]
+}
 ```
 
 ---
@@ -262,6 +318,10 @@ python3 -m pytest tests/unit/test_bus.py::TestEventBus::test_subscribe_and_publi
 | DNA Schema | 17 | Serialization, legacy migration, operations |
 | Materializer | 9 | Atomic writes, kernel protection, packages |
 | Assimilator | 6 | Module loading, validation, batch |
+| Genealogy | 4 | Git init, commit, revert |
+| Auto-Immune | 3 | Revert triggers, failure handling |
+| **Integration** | **28** | Code validation, circuit breaker, goals, config |
+| **Total** | **81** | All passing |
 
 ### Code Quality
 
@@ -404,6 +464,66 @@ ERROR    [ASSIMILATOR ] Validation failed for soma.xyz: Missing global start() f
 1. Check the generated file in `soma/`
 2. The Architect will attempt to redesign in the next cycle
 3. Check `dna.json` for logged failures
+
+---
+
+#### `[GATEWAY] Forbidden imports/calls detected`
+
+**Symptoms:**
+```
+WARNING  [GATEWAY     ] Validation FAILED: Forbidden imports/calls detected: pip, subprocess
+```
+
+**Causes:**
+- LLM generated code using prohibited imports
+- Security validation working correctly
+
+**Solutions:**
+1. This is expected behavior - the system will retry with feedback
+2. If persistent, check prompt templates for clear security instructions
+3. The code is being correctly rejected for security
+
+---
+
+#### `Circuit breaker OPEN for module`
+
+**Symptoms:**
+```
+WARNING  [GENESIS     ] Circuit breaker OPEN for soma.xyz, skipping evolution
+```
+
+**Causes:**
+- Module failed `max_attempts` times (default: 3)
+- Circuit breaker protecting against infinite loops
+
+**Solutions:**
+1. Wait for `cooldown_minutes` (default: 30) for auto-reset
+2. Manually reset circuit (see Circuit Breaker section)
+3. Check `dna.json` failures for root cause
+4. Fix the underlying issue before resetting
+
+---
+
+#### `Invalid configuration` at startup
+
+**Symptoms:**
+```
+ValueError: Invalid configuration:
+  - LLM temperature must be 0-2, got 3.0
+  - max_total_organs must be >= max_concurrent_organs
+```
+
+**Causes:**
+- Configuration validation failed
+- Invalid values in `config.yaml`
+
+**Solutions:**
+1. Check the specific error messages
+2. Fix values in `config.yaml`:
+   - Temperature: 0.0 to 2.0
+   - max_total_organs >= max_concurrent_organs
+   - Timeouts >= 10 seconds
+3. See Configuration section for valid ranges
 
 ---
 

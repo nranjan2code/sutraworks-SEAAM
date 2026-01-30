@@ -21,6 +21,12 @@ paths:
 metabolism:
   cycle_interval_seconds: 30
   max_organs_per_cycle: 3
+  max_concurrent_organs: 20
+  max_total_organs: 50
+
+circuit_breaker:
+  max_attempts: 3
+  cooldown_minutes: 30
 
 genealogy:
   enabled: true

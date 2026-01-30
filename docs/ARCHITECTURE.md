@@ -253,7 +253,7 @@ template: |
 
 ### `llm_gateway.py` - LLM Provider Abstraction
 
-Abstracts LLM providers with **validation and retry logic**.
+Abstracts LLM providers with **comprehensive code validation and retry logic**.
 
 **Providers:**
 | Provider | Configuration | Features |
@@ -261,28 +261,51 @@ Abstracts LLM providers with **validation and retry logic**.
 | Ollama | `OLLAMA_URL`, `OLLAMA_MODEL` | Local, fast, default |
 | Gemini | `GEMINI_API_KEY` | Cloud fallback |
 
-**Validation:**
-- Every generated organ is validated for `start()` function
-- Retry up to 3 times with specific error feedback
-- Code cleaning (removes markdown fences)
+**Code Validation (`validate_code()`):**
+The gateway performs comprehensive AST-based validation:
+
+1. **Syntax Check**: `ast.parse()` for Python syntax validation
+2. **Forbidden Imports**: Rejects dangerous imports:
+   - `pip`, `subprocess`, `os.system`, `os.popen`
+   - `eval`, `exec`, `compile`, `__import__`
+3. **Start Function**: Validates `start()` exists with zero required args
 
 ```python
 class ProviderGateway:
-    def generate_code(self, module_name: str, description: str) -> Optional[str]:
+    def validate_code(self, code: str, module_name: str) -> Tuple[bool, Optional[str]]:
+        # 1. AST syntax check
+        try:
+            tree = ast.parse(code)
+        except SyntaxError as e:
+            return False, f"Syntax error at line {e.lineno}: {e.msg}"
+
+        # 2. Check forbidden imports via AST walk
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                # Check against FORBIDDEN_IMPORTS
+
+        # 3. Validate start() signature
+        return self._validate_start_signature(tree)
+
+    def generate_code(self, module_name: str, description: str,
+                      active_modules: Optional[List[str]] = None) -> Optional[str]:
+        # Pass active_modules to LLM for context
         prompt = prompt_loader.render("agent_factory",
             module_name=module_name,
-            description=description
+            description=description,
+            active_modules=active_modules or []
         )
-        
+
         for attempt in range(self.max_retries):
             code = self._call_provider(prompt)
             code = self._clean_code(code)
-            
-            if self._validate_code(code):
+
+            is_valid, error = self.validate_code(code, module_name)
+            if is_valid:
                 return code
-            
-            prompt = self._add_error_feedback(prompt, "Missing start()")
-        
+
+            prompt = self._add_error_feedback(prompt, error)
+
         return None
 ```
 
@@ -300,25 +323,31 @@ Pydantic-style dataclasses with validation and legacy migration.
 ```python
 @dataclass
 class Goal:
-    text: str
-    created_at: datetime
-    achieved: bool = False
+    description: str
+    priority: int = 1
+    satisfied: bool = False
+    created_at: str
+    required_organs: List[str] = []  # Patterns for auto-satisfaction, e.g., ["soma.perception.*"]
 
 @dataclass
 class OrganBlueprint:
     name: str
     description: str
     dependencies: List[str]
-    created_at: datetime
+    created_at: str
     version: int = 1
 
 @dataclass
 class Failure:
     module_name: str
-    error_type: FailureType  # IMPORT, VALIDATION, RUNTIME, GENERATION
-    message: str
-    context: Dict[str, Any]
+    error_type: FailureType  # IMPORT, VALIDATION, RUNTIME, GENERATION, MATERIALIZATION
+    error_message: str
+    timestamp: str
     attempt_count: int = 1
+    context: Dict[str, Any]
+    # Circuit breaker fields
+    circuit_open: bool = False
+    circuit_opened_at: Optional[str] = None
 
 @dataclass
 class DNA:
@@ -327,6 +356,15 @@ class DNA:
     failures: List[Failure]
     active_modules: List[str]
     metadata: DNAMetadata
+
+    # Circuit breaker methods
+    def should_attempt(self, module_name: str, max_attempts: int, cooldown_minutes: int) -> bool
+    def open_circuit(self, module_name: str) -> None
+    def is_circuit_open(self, module_name: str) -> bool
+    def reset_circuit(self, module_name: str) -> None
+
+    # Goal satisfaction
+    def check_goal_satisfaction(self) -> int  # Returns count of newly satisfied goals
 ```
 
 ### `repository.py` - Persistence
@@ -496,34 +534,49 @@ SEAAM follows a **security-first** design:
 | Protection | Mechanism |
 |------------|-----------|
 | Kernel Immutability | Materializer rejects writes to `seaam/*` |
+| Code Validation | AST-based syntax + forbidden import checking |
+| Forbidden Imports | `pip`, `subprocess`, `os.system`, `eval`, `exec` blocked |
 | Pip Disabled | `allow_pip_install: false` by default |
 | Package Allowlist | Only approved packages can be installed |
 | Atomic Writes | Prevents file corruption |
 | Thread Isolation | Each organ runs in its own daemon thread |
+| Resource Limits | `max_concurrent_organs`, `max_total_organs` caps |
+| Circuit Breaker | Failing organs auto-disabled after max attempts |
+| Config Validation | Invalid configuration rejected at startup |
 
 ---
 
 ## 9. Testing Architecture
 
-The test suite covers all critical components:
+The test suite covers all critical components with **81 tests**.
 
 ```
 tests/
-├── conftest.py           # Shared fixtures
-│   ├── temp_dir          # Isolated temp directories
-│   ├── sample_dna        # Test DNA data
-│   ├── mock_llm          # LLM response mocking
-│   ├── reset_event_bus   # EventBus cleanup
-│   └── soma_structure    # Temp soma/ directory
+├── conftest.py              # Shared fixtures
+│   ├── temp_dir             # Isolated temp directories
+│   ├── sample_dna           # Test DNA data
+│   ├── mock_llm             # LLM response mocking
+│   ├── reset_event_bus      # EventBus cleanup
+│   └── soma_structure       # Temp soma/ directory
 │
-└── unit/
-    ├── test_bus.py       # EventBus (12 tests)
-    ├── test_schema.py    # DNA Schema (17 tests)
-    ├── test_materializer.py  # Materializer (9 tests)
-    └── test_assimilator.py   # Assimilator (6 tests)
+├── unit/
+│   ├── test_bus.py          # EventBus (12 tests)
+│   ├── test_schema.py       # DNA Schema (17 tests)
+│   ├── test_materializer.py # Materializer (9 tests)
+│   ├── test_assimilator.py  # Assimilator (6 tests)
+│   ├── test_genealogy.py    # Git memory (4 tests)
+│   └── test_auto_immune.py  # Auto-revert (3 tests)
+│
+└── integration/
+    └── test_validation.py   # Integration tests (28 tests)
+        ├── TestCodeValidation      # AST validation, forbidden imports
+        ├── TestCircuitBreaker      # Circuit open/close/cooldown
+        ├── TestGoalSatisfaction    # Pattern matching, auto-satisfy
+        └── TestConfigValidation    # Config bounds checking
 ```
 
 **Run tests:**
 ```bash
 python3 -m pytest tests/ -v
+python3 -m pytest tests/integration/ -v  # Integration only
 ```

@@ -102,22 +102,26 @@ class Architect:
         """Build the reflection prompt from template."""
         # Prepare data for template
         goals = [g.description for g in self.dna.goals if not g.satisfied]
-        
+
         blueprint = {
             name: bp.description
             for name, bp in self.dna.blueprint.items()
         }
-        
+
         failures = [
             f"{f.module_name}: {f.error_message} (attempts: {f.attempt_count})"
             for f in self.dna.failures
         ]
-        
+
+        # Include active modules so LLM knows what's running
+        active_modules = self.dna.active_modules
+
         return prompt_loader.render(
             "architect_reflect",
             goals=goals,
             blueprint=blueprint,
             failures=failures,
+            active_modules=active_modules,
         )
     
     def _build_fallback_prompt(self) -> str:
@@ -198,9 +202,15 @@ class Architect:
             
             if modified:
                 self.save_dna()
-            
+
+            # Check if any goals are now satisfied
+            newly_satisfied = self.dna.check_goal_satisfaction()
+            if newly_satisfied > 0:
+                logger.info(f"✓ {newly_satisfied} goal(s) auto-satisfied by active modules")
+                self.save_dna()
+
             return modified
-            
+
         except Exception as e:
             logger.error(f"Failed to process response: {e}")
             logger.debug(f"Raw response: {response[:200]}...")
@@ -235,7 +245,7 @@ class Architect:
         """
         Clean common JSON issues from LLM output.
         """
-        # Remove markdown code fences if present
+        # Remove markdown code fences if present - keep content INSIDE fences
         if "```" in text:
             lines = []
             in_fence = False
@@ -243,13 +253,15 @@ class Architect:
                 if line.strip().startswith("```"):
                     in_fence = not in_fence
                     continue
-                if not in_fence:
+                if in_fence:
                     lines.append(line)
-            text = "\n".join(lines)
-        
+            # Only use extracted lines if we found fenced content
+            if lines:
+                text = "\n".join(lines)
+
         # Remove trailing commas (common LLM error)
         import re
         text = re.sub(r",\s*}", "}", text)
         text = re.sub(r",\s*]", "]", text)
-        
+
         return text

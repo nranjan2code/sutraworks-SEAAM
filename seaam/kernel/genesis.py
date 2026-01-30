@@ -55,12 +55,21 @@ class Genesis:
     def __init__(self, root_dir: Optional[Union[Path, str]] = None):
         """
         Initialize the Genesis system.
-        
+
         Args:
             root_dir: Project root directory (default: current working directory)
+
+        Raises:
+            ValueError: If configuration is invalid
         """
         self.root_dir = Path(root_dir) if root_dir else Path.cwd()
-        
+
+        # Validate configuration
+        config_errors = config.validate()
+        if config_errors:
+            error_msg = "Invalid configuration:\n  - " + "\n  - ".join(config_errors)
+            raise ValueError(error_msg)
+
         # Setup logging from config
         setup_logging(
             level=config.logging.level,
@@ -176,19 +185,37 @@ class Genesis:
     def _evolve_organ(self, organ_name: str, blueprint: OrganBlueprint) -> bool:
         """
         Generate and materialize a single organ.
-        
+
         Args:
             organ_name: Fully qualified module name
             blueprint: The organ blueprint
-        
+
         Returns:
             True if successful
         """
+        # Circuit breaker check
+        if not self.dna.should_attempt(
+            organ_name,
+            max_attempts=config.circuit_breaker.max_attempts,
+            cooldown_minutes=config.circuit_breaker.cooldown_minutes,
+        ):
+            logger.warning(f"Circuit breaker OPEN for {organ_name}, skipping evolution")
+            return False
+
+        # Resource limit check
+        if len(self.dna.active_modules) >= config.metabolism.max_total_organs:
+            logger.warning(f"Max total organs ({config.metabolism.max_total_organs}) reached, skipping {organ_name}")
+            return False
+
         logger.info(f"Evolving: {organ_name}")
         
         try:
-            # Generate code via LLM
-            code = self.gateway.generate_code(organ_name, blueprint.description)
+            # Generate code via LLM (pass active modules for context)
+            code = self.gateway.generate_code(
+                organ_name,
+                blueprint.description,
+                active_modules=self.dna.active_modules,
+            )
             
             if not code:
                 logger.error(f"Failed to generate code for {organ_name}")
@@ -237,19 +264,33 @@ class Genesis:
     def _assimilate_all(self) -> int:
         """
         Assimilate all active organs that aren't already running.
-        
+
         Returns:
             Number successfully integrated
         """
         active = self.dna.active_modules
         already_running = self.assimilator.get_running_organs()
-        
+
         to_integrate = [m for m in active if m not in already_running]
-        
+
         if not to_integrate:
             logger.info("No new organs to integrate")
             return 0
-        
+
+        # Resource limit check
+        max_concurrent = config.metabolism.max_concurrent_organs
+        current_running = len(already_running)
+        available_slots = max_concurrent - current_running
+
+        if available_slots <= 0:
+            logger.warning(f"Max concurrent organs ({max_concurrent}) reached, skipping integration")
+            return 0
+
+        # Limit integration to available slots
+        if len(to_integrate) > available_slots:
+            logger.info(f"Limiting integration to {available_slots} organs (max concurrent: {max_concurrent})")
+            to_integrate = to_integrate[:available_slots]
+
         logger.info(f"Integrating {len(to_integrate)} organs...")
         
         success_count = 0

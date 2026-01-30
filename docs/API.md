@@ -85,7 +85,8 @@ Configuration dataclass with nested config objects.
 |-----------|------|-------------|
 | `llm` | `LLMConfig` | LLM provider settings |
 | `paths` | `PathsConfig` | File path settings |
-| `metabolism` | `MetabolismConfig` | Evolution cycle settings |
+| `metabolism` | `MetabolismConfig` | Evolution cycle settings + resource limits |
+| `circuit_breaker` | `CircuitBreakerConfig` | Circuit breaker settings |
 | `security` | `SecurityConfig` | Security settings |
 | `logging` | `LoggingConfig` | Logging settings |
 
@@ -96,6 +97,13 @@ custom_config = SEAAMConfig.load("custom.yaml")
 # Access nested config
 print(custom_config.llm.model)
 print(custom_config.security.allow_pip_install)
+print(custom_config.circuit_breaker.max_attempts)  # 3
+print(custom_config.metabolism.max_total_organs)   # 50
+
+# Validate configuration
+errors = custom_config.validate()
+if errors:
+    print(f"Invalid config: {errors}")
 ```
 
 ---
@@ -147,8 +155,9 @@ from seaam.dna.schema import (
 Main DNA dataclass containing all system state.
 
 ```python
-# Create tabula rasa DNA
-dna = DNA.create_tabula_rasa(goals=["I must perceive."])
+# Create tabula rasa DNA with measurable goals
+dna = DNA.create_tabula_rasa()
+# Default goals include required_organs patterns like ["soma.perception.*"]
 
 # Add blueprint
 blueprint = dna.add_blueprint(
@@ -167,11 +176,40 @@ dna.add_failure(
 # Mark as active
 dna.mark_active("soma.perception.observer")
 
+# Check goal satisfaction (auto-satisfies goals with matching required_organs)
+newly_satisfied = dna.check_goal_satisfaction()  # Returns count
+
+# Circuit breaker operations
+if dna.should_attempt("soma.xyz", max_attempts=3, cooldown_minutes=30):
+    # Safe to attempt evolution
+    pass
+else:
+    # Circuit is open, skip
+
+dna.is_circuit_open("soma.xyz")    # Check state
+dna.open_circuit("soma.xyz")       # Manually open
+dna.reset_circuit("soma.xyz")      # Reset to closed
+
 # Serialize to dict
 data = dna.to_dict()
 
 # Load from dict
 dna = DNA.from_dict(data)
+```
+
+#### `Goal`
+
+Goal dataclass with optional measurable criteria.
+
+```python
+from seaam.dna.schema import Goal
+
+goal = Goal(
+    description="I must perceive the file system.",
+    priority=1,
+    satisfied=False,
+    required_organs=["soma.perception.*"]  # Wildcard pattern
+)
 ```
 
 #### `FailureType`
@@ -184,6 +222,7 @@ Enum for classifying failure types.
 | `VALIDATION` | Missing start() or signature issue |
 | `RUNTIME` | Exception during execution |
 | `GENERATION` | LLM failed to generate valid code |
+| `MATERIALIZATION` | Failed to write code to disk |
 
 ---
 
@@ -495,7 +534,7 @@ from seaam.connectors.llm_gateway import ProviderGateway
 
 #### `ProviderGateway`
 
-Abstraction layer for LLM providers.
+Abstraction layer for LLM providers with comprehensive code validation.
 
 ```python
 gateway = ProviderGateway()
@@ -503,18 +542,27 @@ gateway = ProviderGateway()
 # Simple thinking
 response = gateway.think("What is 2+2?")
 
-# Generate organ code
+# Generate organ code (with active_modules context)
 code = gateway.generate_code(
     module_name="soma.perception.observer",
-    description="Watches filesystem for changes"
+    description="Watches filesystem for changes",
+    active_modules=["soma.memory.journal"]  # Optional context
 )
 
-# Low-level call with temperature
-response = gateway.call_llm(
-    prompt="...",
-    temperature=0.5
-)
+# Validate code manually
+is_valid, error = gateway.validate_code(code, "soma.test.module")
+if not is_valid:
+    print(f"Validation failed: {error}")
+    # Possible errors:
+    # - "Syntax error at line X: ..."
+    # - "Forbidden imports/calls detected: pip, subprocess"
+    # - "Missing required 'def start():' function"
+    # - "start() has N required argument(s), must have zero"
 ```
+
+**Forbidden Imports/Calls:**
+- `pip`, `subprocess`, `os.system`, `os.popen`, `os.spawn*`, `os.exec*`
+- `eval`, `exec`, `compile`, `__import__`
 
 ---
 

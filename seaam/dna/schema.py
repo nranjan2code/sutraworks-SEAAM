@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Any, Optional, Union, List, Dict
 from dataclasses import dataclass, field, asdict
 from enum import Enum
+import fnmatch
 import json
 
 
@@ -25,8 +26,9 @@ class FailureType(str, Enum):
 class Failure:
     """
     A recorded failure for learning and correction.
-    
+
     Structured format replaces the old string-based format.
+    Includes circuit breaker state for repeated failures.
     """
     module_name: str
     error_type: FailureType
@@ -34,7 +36,10 @@ class Failure:
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
     attempt_count: int = 1
     context: Dict[str, Any] = field(default_factory=dict)
-    
+    # Circuit breaker fields
+    circuit_open: bool = False
+    circuit_opened_at: Optional[str] = None
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "module_name": self.module_name,
@@ -43,6 +48,8 @@ class Failure:
             "timestamp": self.timestamp,
             "attempt_count": self.attempt_count,
             "context": self.context,
+            "circuit_open": self.circuit_open,
+            "circuit_opened_at": self.circuit_opened_at,
         }
     
     @classmethod
@@ -53,7 +60,7 @@ class Failure:
                 error_type = FailureType(error_type)
             except ValueError:
                 error_type = FailureType.RUNTIME
-        
+
         return cls(
             module_name=data["module_name"],
             error_type=error_type,
@@ -61,6 +68,8 @@ class Failure:
             timestamp=data.get("timestamp", datetime.utcnow().isoformat() + "Z"),
             attempt_count=data.get("attempt_count", 1),
             context=data.get("context", {}),
+            circuit_open=data.get("circuit_open", False),
+            circuit_opened_at=data.get("circuit_opened_at"),
         )
     
     @classmethod
@@ -124,31 +133,37 @@ class OrganBlueprint:
 class Goal:
     """
     A goal that drives system evolution.
+
+    Goals can have required_organs patterns for automatic satisfaction checking.
+    Patterns support wildcards: "soma.perception.*" matches any perception organ.
     """
     description: str
     priority: int = 1  # 1 = highest priority
     satisfied: bool = False
     created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
-    
+    required_organs: List[str] = field(default_factory=list)  # e.g., ["soma.perception.*"]
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "description": self.description,
             "priority": self.priority,
             "satisfied": self.satisfied,
             "created_at": self.created_at,
+            "required_organs": self.required_organs,
         }
-    
+
     @classmethod
     def from_dict(cls, data: Union[Dict[str, Any], str]) -> "Goal":
         """Create from dict or legacy string."""
         if isinstance(data, str):
             return cls(description=data)
-        
+
         return cls(
             description=data.get("description", ""),
             priority=data.get("priority", 1),
             satisfied=data.get("satisfied", False),
             created_at=data.get("created_at", datetime.utcnow().isoformat() + "Z"),
+            required_organs=data.get("required_organs", []),
         )
 
 
@@ -304,6 +319,105 @@ class DNA:
     def get_failed_modules(self) -> List[str]:
         """Get list of module names that have failures."""
         return [f.module_name for f in self.failures]
+
+    def should_attempt(self, module_name: str, max_attempts: int = 3, cooldown_minutes: int = 30) -> bool:
+        """
+        Check if we should attempt to evolve/fix this module.
+
+        Returns False if:
+        - Circuit is open and cooldown hasn't passed
+        - Attempt count >= max_attempts and circuit is open
+
+        Args:
+            module_name: The module to check
+            max_attempts: Maximum attempts before circuit opens
+            cooldown_minutes: Minutes to wait before retrying after circuit opens
+        """
+        for failure in self.failures:
+            if failure.module_name == module_name:
+                if failure.circuit_open:
+                    # Check if cooldown has passed
+                    if failure.circuit_opened_at:
+                        opened_at = datetime.fromisoformat(failure.circuit_opened_at.rstrip('Z'))
+                        now = datetime.utcnow()
+                        elapsed = (now - opened_at).total_seconds() / 60
+                        if elapsed < cooldown_minutes:
+                            return False
+                        # Cooldown passed, close circuit and allow retry
+                        failure.circuit_open = False
+                        failure.circuit_opened_at = None
+                        return True
+                    return False
+                # Circuit not open, check attempt count
+                if failure.attempt_count >= max_attempts:
+                    # Too many attempts, open the circuit
+                    self.open_circuit(module_name)
+                    return False
+                return True
+        # No failure record, safe to attempt
+        return True
+
+    def open_circuit(self, module_name: str) -> None:
+        """Open the circuit breaker for a module."""
+        for failure in self.failures:
+            if failure.module_name == module_name:
+                failure.circuit_open = True
+                failure.circuit_opened_at = datetime.utcnow().isoformat() + "Z"
+                return
+
+    def is_circuit_open(self, module_name: str) -> bool:
+        """Check if circuit breaker is open for a module."""
+        for failure in self.failures:
+            if failure.module_name == module_name:
+                return failure.circuit_open
+        return False
+
+    def reset_circuit(self, module_name: str) -> None:
+        """Manually reset the circuit breaker for a module."""
+        for failure in self.failures:
+            if failure.module_name == module_name:
+                failure.circuit_open = False
+                failure.circuit_opened_at = None
+                failure.attempt_count = 0
+                return
+
+    def check_goal_satisfaction(self) -> int:
+        """
+        Check and update goal satisfaction based on active modules.
+
+        For each goal with required_organs patterns, checks if all patterns
+        match at least one active module. If so, marks the goal as satisfied.
+
+        Returns:
+            Number of goals newly satisfied
+        """
+        newly_satisfied = 0
+
+        for goal in self.goals:
+            if goal.satisfied:
+                continue
+
+            if not goal.required_organs:
+                # No required organs specified, can't auto-satisfy
+                continue
+
+            # Check if all required patterns are matched
+            all_matched = True
+            for pattern in goal.required_organs:
+                pattern_matched = False
+                for module in self.active_modules:
+                    if fnmatch.fnmatch(module, pattern):
+                        pattern_matched = True
+                        break
+                if not pattern_matched:
+                    all_matched = False
+                    break
+
+            if all_matched:
+                goal.satisfied = True
+                newly_satisfied += 1
+
+        return newly_satisfied
     
     def mark_active(self, module_name: str) -> None:
         """Mark a module as active."""
@@ -319,16 +433,40 @@ class DNA:
             self.active_modules.remove(module_name)
     
     @classmethod
-    def create_tabula_rasa(cls, goals: Optional[List[str]] = None) -> "DNA":
-        """Create a fresh DNA with default goals."""
+    def create_tabula_rasa(cls, goals: Optional[List[Dict[str, Any]]] = None) -> "DNA":
+        """
+        Create a fresh DNA with default measurable goals.
+
+        Args:
+            goals: Optional list of goal dicts with 'description' and optional 'required_organs'
+        """
         default_goals = goals or [
-            "I must be able to perceive the file system.",
-            "I must have a memory.",
-            "I must have a visual dashboard.",
+            {
+                "description": "I must be able to perceive the file system.",
+                "required_organs": ["soma.perception.*"],
+            },
+            {
+                "description": "I must have a memory.",
+                "required_organs": ["soma.memory.*"],
+            },
+            {
+                "description": "I must have a visual dashboard.",
+                "required_organs": ["soma.interface.*"],
+            },
         ]
-        
+
+        parsed_goals = []
+        for g in default_goals:
+            if isinstance(g, str):
+                parsed_goals.append(Goal(description=g))
+            else:
+                parsed_goals.append(Goal(
+                    description=g.get("description", ""),
+                    required_organs=g.get("required_organs", []),
+                ))
+
         return cls(
             system_version="1.0.0",
             system_name="SEAAM-TabulaRasa",
-            goals=[Goal(description=g) for g in default_goals],
+            goals=parsed_goals,
         )

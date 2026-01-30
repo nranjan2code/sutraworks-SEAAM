@@ -95,22 +95,29 @@ soma/                           # 🫀 The Evolved Body
 
 ## Test Suite (`tests/`)
 
-Comprehensive testing with pytest.
+Comprehensive testing with pytest - **81 tests total**.
 
 ```
 tests/
 ├── __init__.py
 ├── conftest.py                 # Shared fixtures
 │
-├── unit/                       # Unit tests
+├── unit/                       # Unit tests (53 tests)
 │   ├── __init__.py
 │   ├── test_bus.py             # EventBus (12 tests)
 │   ├── test_schema.py          # DNA Schema (17 tests)
 │   ├── test_materializer.py    # Materializer (9 tests)
-│   └── test_assimilator.py     # Assimilator (6 tests)
+│   ├── test_assimilator.py     # Assimilator (6 tests)
+│   ├── test_genealogy.py       # Git memory (4 tests)
+│   └── test_auto_immune.py     # Auto-revert (3 tests)
 │
-└── integration/                # Integration tests
-    └── __init__.py
+└── integration/                # Integration tests (28 tests)
+    ├── __init__.py
+    └── test_validation.py      # Validation tests
+        ├── TestCodeValidation      # AST, forbidden imports, start()
+        ├── TestCircuitBreaker      # Open, close, cooldown
+        ├── TestGoalSatisfaction    # Patterns, auto-satisfy
+        └── TestConfigValidation    # Bounds, constraints
 ```
 
 ### Running Tests
@@ -124,6 +131,9 @@ python3 -m pytest tests/ --cov=seaam
 
 # Specific file
 python3 -m pytest tests/unit/test_bus.py -v
+
+# Integration tests only
+python3 -m pytest tests/integration/ -v
 ```
 
 ---
@@ -276,4 +286,7 @@ Genesis (orchestrator)
 | DNA Schema | 17 | Serialization, migration, all operations |
 | Materializer | 9 | Writes, protection, packages, atomic |
 | Assimilator | 6 | Loading, validation, batch |
-| **Total** | **46** | **All passing** |
+| Genealogy | 4 | Git init, commit, revert |
+| Auto-Immune | 3 | Revert triggers, failure handling |
+| **Integration** | **28** | Code validation, circuit breaker, goals, config |
+| **Total** | **81** | **All passing** |

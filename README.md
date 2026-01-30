@@ -6,7 +6,7 @@
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-  [![Tests](https://img.shields.io/badge/tests-46%20passing-success.svg)]()
+  [![Tests](https://img.shields.io/badge/tests-81%20passing-success.svg)]()
   [![Status: Alive](https://img.shields.io/badge/Status-Autopoietic-success.svg)]()
   
   > *"The code that writes itself."*
@@ -94,12 +94,16 @@ flowchart TD
     E -->|No| G[Report Failure]
     B -->|Validation Error| H[Log to DNA\nArchitect Redesigns]
     B -->|Runtime Error| I[Stop Organ\nLog Failure]
+    B -->|Circuit Open| J[Skip Until Cooldown]
 ```
 
+- **Code Validation**: AST-based syntax checking, forbidden imports detection (pip, subprocess, eval), start() signature validation
+- **Circuit Breaker**: After 3 failures, an organ is skipped for 30 minutes (configurable)
 - **Internal Dependencies**: Missing `soma.*` modules are added to the blueprint for evolution
 - **External Dependencies**: Only allowlisted packages can be installed (security-first)
 - **Validation**: Every organ must have a `start()` function with zero required arguments
 - **Learning**: All failures are recorded in DNA for the Architect to learn from
+- **Measurable Goals**: Goals can specify required organ patterns and auto-satisfy when met
 
 ---
 
@@ -145,7 +149,7 @@ Options:
 
 ## 🧪 Testing
 
-SEAAM has a comprehensive test suite with **46 passing tests**.
+SEAAM has a comprehensive test suite with **81 passing tests**.
 
 ```bash
 # Run all tests
@@ -157,6 +161,7 @@ python3 -m pytest tests/ --cov=seaam --cov-report=term-missing
 # Run specific test modules
 python3 -m pytest tests/unit/test_bus.py -v
 python3 -m pytest tests/unit/test_schema.py -v
+python3 -m pytest tests/integration/test_validation.py -v
 ```
 
 ### Test Coverage
@@ -167,6 +172,9 @@ python3 -m pytest tests/unit/test_schema.py -v
 | DNA Schema | 17 | Serialization, legacy migration, all operations |
 | Materializer | 9 | Atomic writes, kernel protection, packages |
 | Assimilator | 6 | Module integration, validation, batch |
+| Auto-Immune | 3 | Revert, rollback, failure handling |
+| Genealogy | 4 | Git init, commit, revert |
+| **Integration** | **28** | Code validation, circuit breaker, goals, config |
 
 ---
 
@@ -253,6 +261,16 @@ llm:
   model: qwen2.5-coder:14b
   temperature: 0.1
 
+metabolism:
+  cycle_interval_seconds: 30
+  max_organs_per_cycle: 3
+  max_concurrent_organs: 20  # Resource limit
+  max_total_organs: 50       # Resource limit
+
+circuit_breaker:
+  max_attempts: 3            # Failures before circuit opens
+  cooldown_minutes: 30       # Wait time before retry
+
 security:
   allow_pip_install: false   # Disabled by default for security
 
@@ -267,6 +285,7 @@ logging:
 |----------|---------|
 | `SEAAM_LOG_LEVEL` | Override log level |
 | `SEAAM_ALLOW_PIP` | Enable pip installs ("true") |
+| `SEAAM_WATCH_PATH` | Custom path for filesystem observer |
 | `OLLAMA_URL` | Custom Ollama endpoint |
 | `GEMINI_API_KEY` | Enable Gemini fallback |
 
@@ -285,9 +304,15 @@ logging:
 SEAAM follows security-first principles:
 
 - **Kernel Protection**: The system cannot modify `seaam/*` files
+- **Code Validation**: AST-based validation rejects:
+  - Syntax errors
+  - Forbidden imports (`pip`, `subprocess`, `os.system`, `eval`, `exec`)
+  - Missing or invalid `start()` function signatures
 - **Pip Disabled by Default**: External package installation requires explicit opt-in
 - **Allowlist**: Only approved packages can be installed even when enabled
 - **Atomic Writes**: Prevents file corruption from interrupted writes
+- **Resource Limits**: Configurable max organs to prevent runaway growth
+- **Circuit Breaker**: Failing organs are temporarily disabled to prevent loops
 
 ---
 
