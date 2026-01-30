@@ -41,6 +41,20 @@ seaa/                      # Immutable kernel (CANNOT be modified by system)
 │   ├── prompt_loader.py    # YAML template manager
 │   └── prompts/            # Externalized prompt templates
 │
+├── cli/                    # Interactive CLI
+│   ├── repl.py             # REPL loop with prompt_toolkit
+│   ├── commands.py         # Command registry + handlers
+│   ├── runtime.py          # Genesis background thread
+│   ├── completers.py       # Tab completion
+│   ├── parsers/            # Fuzzy matching + natural language
+│   │   ├── fuzzy.py        # Levenshtein-based typo correction
+│   │   └── natural.py      # Intent detection
+│   └── ui/                 # Rich UI components
+│       ├── formatters.py   # Output helpers
+│       ├── panels.py       # Status panels
+│       ├── tables.py       # Organ/goal tables
+│       └── dashboard.py    # Live full-screen view
+│
 └── connectors/             # External integrations
     └── llm_gateway.py      # Ollama/Gemini abstraction
 
@@ -73,6 +87,9 @@ soma/                       # Evolved organs (SYSTEM-GENERATED)
 # Run the agent
 python3 main.py
 
+# Interactive mode (Rich UI + REPL)
+python3 main.py -i
+
 # Query commands (no agent startup)
 python3 main.py status              # System health + vitals
 python3 main.py organs              # List organs with health
@@ -87,10 +104,42 @@ python3 main.py watch               # Live event stream
 python3 main.py status --json
 
 # Options
+python3 main.py -i                  # Interactive REPL mode
 python3 main.py --reset             # Reset to tabula rasa (preserves identity)
 python3 main.py --config FILE       # Custom config file
 python3 main.py --log-level DEBUG   # Override log level
 ```
+
+## Interactive CLI
+
+The CLI supports an interactive REPL mode with Rich terminal UI:
+
+```bash
+# Install CLI dependencies
+pip install seaa[cli]
+
+# Launch interactive mode
+python3 main.py -i
+```
+
+### Features
+- **Rich UI**: Tables, panels, live dashboard
+- **Natural Language**: "how are you?" -> status command
+- **Typo Tolerance**: "staus" -> "status" (auto-corrected)
+- **Tab Completion**: Commands, arguments, organ names
+- **Background Genesis**: Start/stop agent while interacting
+
+### Commands in REPL
+| Command | Aliases | Natural Triggers |
+|---------|---------|------------------|
+| `status` | `s` | "how are you", "health" |
+| `organs` | `o` | "show organs" |
+| `goals` | `g` | "progress" |
+| `dashboard` | `d` | "live view" |
+| `start` | `awaken` | "wake up" |
+| `stop` | `sleep` | "go to sleep" |
+| `help` | `?` | "what can you do" |
+| `exit` | `q`, `bye` | "goodbye" |
 
 ## Common Tasks
 
@@ -239,6 +288,35 @@ goal = Goal(description="Perceive files", required_organs=["soma.perception.*"])
 newly_satisfied = dna.check_goal_satisfaction()  # Auto-satisfies matching goals
 ```
 
+### CLI (Interactive Mode)
+```python
+from seaa.cli import run_interactive
+from seaa.cli.commands import get_registry, Command
+from seaa.cli.parsers.fuzzy import get_best_match
+from seaa.cli.parsers.natural import detect_intent
+
+# Run interactive REPL
+run_interactive()
+
+# Register custom command
+registry = get_registry()
+cmd = Command(
+    name="mycommand",
+    handler=my_handler,
+    description="My command",
+    aliases=["mc"],
+    natural_triggers=["do my thing"],
+)
+registry.register(cmd)
+
+# Fuzzy matching
+match = get_best_match("staus", ["status", "stop"], threshold=0.6)
+# ("status", 0.83)
+
+# Natural language
+intent = detect_intent("how are you?")  # "status"
+```
+
 ## Observability Layer
 
 The observability layer is split into **static** (kernel) and **evolvable** (soma) components:
@@ -343,15 +421,30 @@ The codebase was recently refactored for robustness:
 | JSON Output | Done | All commands support `--json` for programmatic access |
 | Mesh-Ready | Done | Protocols designed for future multi-instance deployment |
 
+### Interactive CLI (Phase 5)
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| REPL | Done | Interactive loop with prompt_toolkit |
+| Rich UI | Done | Tables, panels, spinners, live dashboard |
+| Fuzzy Matching | Done | Levenshtein-based typo correction |
+| Natural Language | Done | Intent detection for conversational queries |
+| Tab Completion | Done | Commands, arguments, organ names |
+| Background Genesis | Done | Run agent while interacting |
+| History | Done | Persistent command history in `~/.seaa_history` |
+| Tests | Done | 40 new tests for CLI components |
+
 ## Debugging Tips
 
 1. **Enable debug logging**: `python3 main.py --log-level DEBUG`
-2. **Check DNA state**: `cat dna.json | python3 -m json.tool`
-3. **Check identity**: `python3 main.py identity`
-4. **List organs**: `python3 main.py organs`
-5. **Check health**: `python3 main.py status`
-6. **Watch events**: `python3 main.py watch`
-7. **Reset system**: `python3 main.py --reset`
+2. **Use interactive mode**: `python3 main.py -i` (requires `pip install seaa[cli]`)
+3. **Check DNA state**: `cat dna.json | python3 -m json.tool`
+4. **Check identity**: `python3 main.py identity`
+5. **List organs**: `python3 main.py organs`
+6. **Check health**: `python3 main.py status`
+7. **Watch events**: `python3 main.py watch`
+8. **Live dashboard**: `python3 main.py -i` then type `dashboard`
+9. **Reset system**: `python3 main.py --reset`
 
 ## File Locations
 
@@ -361,6 +454,8 @@ The codebase was recently refactored for robustness:
 | Configuration | `config.yaml` |
 | DNA state | `dna.json` |
 | Instance identity | `.identity.json` |
+| CLI history | `~/.seaa_history` |
 | Tests | `tests/` |
 | Docs | `docs/` |
 | Prompts | `seaa/cortex/prompts/` |
+| CLI package | `seaa/cli/` |

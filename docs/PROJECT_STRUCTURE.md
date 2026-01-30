@@ -66,6 +66,24 @@ seaa/
 │       ├── agent_factory.yaml
 │       └── error_feedback.yaml
 │
+├── cli/                        # 💻 Interactive CLI
+│   ├── __init__.py             # Lazy imports for optional deps
+│   ├── repl.py                 # REPL loop with prompt_toolkit
+│   ├── commands.py             # Command registry
+│   ├── handlers.py             # Command implementations
+│   ├── completers.py           # Tab completion
+│   ├── runtime.py              # Genesis background manager
+│   ├── parsers/                # Input parsing
+│   │   ├── __init__.py
+│   │   ├── fuzzy.py            # Levenshtein typo correction
+│   │   └── natural.py          # Natural language intent
+│   └── ui/                     # Rich UI components
+│       ├── __init__.py
+│       ├── formatters.py       # Output formatting helpers
+│       ├── panels.py           # Status panels
+│       ├── tables.py           # Organ/goal/failure tables
+│       └── dashboard.py        # Live full-screen view
+│
 └── connectors/                 # 🔌 External Integrations
     ├── __init__.py
     └── llm_gateway.py          # Ollama/Gemini abstraction
@@ -106,14 +124,14 @@ soma/                           # 🫀 The Evolved Body
 
 ## Test Suite (`tests/`)
 
-Comprehensive testing with pytest - **109 tests total**.
+Comprehensive testing with pytest - **129 tests total**.
 
 ```
 tests/
 ├── __init__.py
 ├── conftest.py                 # Shared fixtures
 │
-├── unit/                       # Unit tests (81 tests)
+├── unit/                       # Unit tests (101 tests)
 │   ├── __init__.py
 │   ├── test_bus.py             # EventBus (12 tests)
 │   ├── test_schema.py          # DNA Schema (17 tests)
@@ -121,7 +139,8 @@ tests/
 │   ├── test_assimilator.py     # Assimilator (6 tests)
 │   ├── test_genealogy.py       # Git memory (4 tests)
 │   ├── test_auto_immune.py     # Auto-revert (3 tests)
-│   └── test_observability.py   # Observability (20 tests) - identity, beacon, observer
+│   ├── test_observability.py   # Observability (20 tests) - identity, beacon, observer
+│   └── test_cli.py             # CLI tests (40 tests) - fuzzy, natural, formatters
 │
 └── integration/                # Integration tests (28 tests)
     ├── __init__.py
@@ -130,6 +149,20 @@ tests/
         ├── TestCircuitBreaker      # Open, close, cooldown
         ├── TestGoalSatisfaction    # Patterns, auto-satisfy
         └── TestConfigValidation    # Bounds, constraints
+
+CLI Tests (test_cli.py):
+├── TestLevenshteinDistance     # Levenshtein algorithm
+├── TestFuzzyMatch              # Fuzzy matching
+├── TestIsLikelyTypo            # Typo detection
+├── TestNaturalParser           # Intent detection
+├── TestIsNaturalQuery          # Query classification
+├── TestFormatUptime            # Uptime formatting
+├── TestFormatTimestamp         # Timestamp formatting
+├── TestFormatPercentage        # Percentage formatting
+├── TestTruncate                # Text truncation
+├── TestHealthIndicators        # Status indicators
+├── TestCommandRegistry         # Command registration
+└── TestCommandHandlers         # Handler mocking
 
 Security Tests (test_materializer.py):
 ├── TestMaterializerSecurity    # Path traversal, module validation
@@ -169,6 +202,7 @@ docs/
 ├── ARCHITECTURE.md             # System architecture deep dive
 ├── DESIGN.md                   # Design specifications & protocols
 ├── OPERATIONS.md               # Operations manual & troubleshooting
+├── CLI.md                      # Interactive CLI guide (NEW)
 ├── API.md                      # API reference
 ├── PROJECT_STRUCTURE.md        # This file
 │
@@ -216,20 +250,26 @@ logging:
 [project]
 name = "seaa"
 version = "1.0.0"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 dependencies = [
     "requests>=2.28.0",
-    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
+cli = [
+    "rich>=13.0.0",
+    "prompt_toolkit>=3.0.0",
+    "humanize>=4.0.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.21",
     "pytest-cov>=4.0",
     "black>=23.0",
     "ruff>=0.1.0",
+    "rich>=13.0.0",
+    "prompt_toolkit>=3.0.0",
 ]
 ```
 
@@ -269,6 +309,12 @@ dev = [
 | **Architect** | `seaa/cortex/architect.py` | System designer + **LLM response validation** |
 | **PromptLoader** | `seaa/cortex/prompt_loader.py` | YAML template management |
 | **LLMGateway** | `seaa/connectors/llm_gateway.py` | LLM provider abstraction + **code validation & prompt sanitization** |
+| **REPL** | `seaa/cli/repl.py` | Interactive loop with **history + completion** |
+| **Commands** | `seaa/cli/commands.py` | Command registry with **aliases + natural triggers** |
+| **Runtime** | `seaa/cli/runtime.py` | **Background Genesis** thread management |
+| **Fuzzy** | `seaa/cli/parsers/fuzzy.py` | **Levenshtein typo correction** |
+| **Natural** | `seaa/cli/parsers/natural.py` | **Natural language intent detection** |
+| **Dashboard** | `seaa/cli/ui/dashboard.py` | **Live full-screen** Rich view |
 
 ---
 
@@ -276,10 +322,11 @@ dev = [
 
 | File | Purpose |
 |------|---------|
-| `main.py` | CLI entry point with commands: status, organs, goals, identity, etc. |
+| `main.py` | CLI entry point with commands: status, organs, goals, identity, -i, etc. |
 | `config.yaml` | System configuration (LLM, paths, security, logging) |
 | `dna.json` | Persistent state (goals, blueprint, failures, active modules) |
 | `.identity.json` | Instance identity (survives reset) |
+| `~/.seaa_history` | Interactive CLI command history |
 | `pyproject.toml` | Dependencies, build config, pytest settings |
 | `CLAUDE.md` | AI assistant context guide |
 
@@ -316,5 +363,6 @@ Genesis (orchestrator)
 | Genealogy | 4 | Git init, commit, revert |
 | Auto-Immune | 3 | Revert triggers, failure handling |
 | Observability | 20 | Identity, Beacon, Observer, thread-safety, caching |
+| **CLI** | **40** | Fuzzy matching, natural language, formatters, commands |
 | **Integration** | **28** | Code validation, circuit breaker, goals, config |
-| **Total** | **109** | **All passing** |
+| **Total** | **129** | **All passing** |

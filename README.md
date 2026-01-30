@@ -6,7 +6,7 @@
 
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-  [![Tests](https://img.shields.io/badge/tests-89%20passing-success.svg)]()
+  [![Tests](https://img.shields.io/badge/tests-129%20passing-success.svg)]()
   [![Status: Alive](https://img.shields.io/badge/Status-Autopoietic-success.svg)]()
 
   > *"The code that writes itself."*
@@ -162,6 +162,9 @@ python3 main.py --help
 # Run the agent (default)
 python3 main.py
 
+# Interactive mode (Rich UI + REPL)
+python3 main.py -i
+
 # Query commands (no agent startup)
 python3 main.py status              # System health
 python3 main.py organs              # List organs with health
@@ -177,6 +180,42 @@ python3 main.py --reset             # Reset to tabula rasa
 python3 main.py --config FILE       # Custom config file
 python3 main.py --log-level DEBUG   # Override log level
 ```
+
+### Interactive Mode
+
+SEAA includes a best-in-class interactive CLI with Rich terminal UI:
+
+```bash
+# Install CLI dependencies
+pip install seaa[cli]
+
+# Launch interactive REPL
+python3 main.py -i
+```
+
+Features:
+- **Rich UI**: Tables, panels, and live dashboard
+- **Natural Language**: Ask "how are you?" or "show organs"
+- **Typo Tolerance**: Auto-corrects "staus" to "status"
+- **Tab Completion**: Complete commands and arguments
+- **Background Genesis**: Start/stop the agent while interacting
+
+```
+● Robinson > how are you?
+╭──────────────────────────────────────╮
+│  Robinson (713d8815)                 │
+├──────────────────────────────────────┤
+│  Status:     HEALTHY                 │
+│  Organs:     3/3 healthy             │
+│  Goals:      2/4 satisfied           │
+╰──────────────────────────────────────╯
+
+● Robinson > dashboard    # Live full-screen view
+● Robinson > start        # Start Genesis in background
+● Robinson > watch        # Stream events
+```
+
+See [Interactive CLI Guide](docs/CLI.md) for full documentation.
 
 ---
 
@@ -278,7 +317,7 @@ Any SEAA instance can query another via the Beacon protocol—enabling fleet mon
 
 ## Testing
 
-The agent has a comprehensive test suite with **89 passing tests**.
+The agent has a comprehensive test suite with **129 passing tests**.
 
 ```bash
 # Run all tests
@@ -290,6 +329,7 @@ python3 -m pytest tests/ --cov=seaa --cov-report=term-missing
 # Run specific test modules
 python3 -m pytest tests/unit/test_bus.py -v
 python3 -m pytest tests/unit/test_schema.py -v
+python3 -m pytest tests/unit/test_cli.py -v
 python3 -m pytest tests/integration/test_validation.py -v
 ```
 
@@ -303,6 +343,8 @@ python3 -m pytest tests/integration/test_validation.py -v
 | Assimilator | 6 | Module integration, validation, batch |
 | Auto-Immune | 3 | Revert, rollback, failure handling |
 | Genealogy | 4 | Git init, commit, revert |
+| Observability | 20 | Identity, Beacon, Observer, thread-safety |
+| **CLI** | **40** | Fuzzy matching, natural language, formatters |
 | **Integration** | **28** | Code validation, circuit breaker, goals, config |
 
 ---
@@ -350,15 +392,22 @@ sutraworks-SEAA/
 │   │   ├── assimilator.py   # Module loader
 │   │   ├── materializer.py  # Code writer
 │   │   ├── immunity.py      # Error recovery
-│   │   ├── identity.py      # Instance identity (NEW)
-│   │   ├── beacon.py        # Health endpoint (NEW)
-│   │   ├── observer.py      # Local introspection (NEW)
-│   │   └── protocols.py     # Observable contracts (NEW)
+│   │   ├── identity.py      # Instance identity
+│   │   ├── beacon.py        # Health endpoint
+│   │   ├── observer.py      # Local introspection
+│   │   └── protocols.py     # Observable contracts
 │   │
 │   ├── cortex/              # The mind
 │   │   ├── architect.py     # System designer
 │   │   ├── prompt_loader.py # Template management
 │   │   └── prompts/         # YAML templates
+│   │
+│   ├── cli/                 # Interactive CLI (NEW)
+│   │   ├── repl.py          # REPL loop with history
+│   │   ├── commands.py      # Command registry
+│   │   ├── runtime.py       # Background Genesis manager
+│   │   ├── parsers/         # Fuzzy + natural language
+│   │   └── ui/              # Rich tables, panels, dashboard
 │   │
 │   └── connectors/          # External integrations
 │       └── llm_gateway.py   # Ollama/Gemini abstraction
@@ -377,6 +426,7 @@ sutraworks-SEAA/
     ├── ARCHITECTURE.md      # System architecture
     ├── DESIGN.md            # Design specifications
     ├── OPERATIONS.md        # Operations manual
+    ├── CLI.md               # Interactive CLI guide (NEW)
     └── API.md               # API reference
 ```
 
@@ -434,6 +484,7 @@ logging:
 - **[Architecture Deep Dive](docs/ARCHITECTURE.md)**: The Kernel, Cortex, DNA, and Observability protocols
 - **[Design Blueprints](docs/DESIGN.md)**: DNA schema, evolution flow, observability design
 - **[Operations Manual](docs/OPERATIONS.md)**: Configuration, CLI commands, troubleshooting
+- **[Interactive CLI Guide](docs/CLI.md)**: REPL, natural language, Rich UI components
 - **[API Reference](docs/API.md)**: Complete API documentation
 
 ---

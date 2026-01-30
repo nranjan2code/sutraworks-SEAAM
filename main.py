@@ -5,6 +5,7 @@ The code that writes itself.
 
 Usage:
     python main.py [command] [options]
+    python main.py -i                # Interactive mode
 
 Commands:
     (none)      Start the agent (default)
@@ -17,9 +18,10 @@ Commands:
     timeline    Show evolution timeline
 
 Options:
-    --reset     Reset to tabula rasa state before starting
-    --config    Path to configuration file
-    --log-level Override log level
+    -i, --interactive  Launch interactive REPL
+    --reset            Reset to tabula rasa state before starting
+    --config           Path to configuration file
+    --log-level        Override log level
 """
 
 import argparse
@@ -51,6 +53,7 @@ Commands:
 
 Examples:
   python main.py                    # Start the agent
+  python main.py -i                 # Interactive mode
   python main.py status             # Check health
   python main.py organs             # List organs
   python main.py identity --name Robinson  # Set name
@@ -95,6 +98,11 @@ Examples:
     timeline_parser.add_argument("--json", action="store_true", help="Output as JSON")
 
     # Global options
+    parser.add_argument(
+        "-i", "--interactive",
+        action="store_true",
+        help="Launch interactive REPL with rich UI",
+    )
     parser.add_argument(
         "--reset",
         action="store_true",
@@ -468,6 +476,17 @@ def run_agent():
         sys.exit(1)
 
 
+def run_interactive():
+    """Run the interactive REPL."""
+    try:
+        from seaa.cli import run_interactive as cli_run
+        cli_run()
+    except ImportError as e:
+        print(f"Interactive mode requires additional dependencies: {e}")
+        print("Install with: pip install rich prompt_toolkit")
+        sys.exit(1)
+
+
 def main():
     """Main entry point."""
     args = parse_args()
@@ -490,6 +509,11 @@ def main():
         if not args.command:
             # If just --reset, don't start agent
             return
+
+    # Check for interactive mode
+    if args.interactive:
+        run_interactive()
+        return
 
     # Dispatch to command handler
     if args.command == "status":

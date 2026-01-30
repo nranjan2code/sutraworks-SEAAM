@@ -29,10 +29,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+cli = [
+    "rich>=13.0.0",
+    "prompt_toolkit>=3.0.0",
+    "humanize>=4.0.0",
+]
 full = [
     "pyyaml>=6.0",
     "watchdog>=3.0",
     "streamlit>=1.20",
+    "rich>=13.0.0",
+    "prompt_toolkit>=3.0.0",
+    "humanize>=4.0.0",
 ]
 dev = [
     "pytest>=7.0",
@@ -40,6 +48,9 @@ dev = [
     "pytest-cov>=4.0",
     "black>=23.0",
     "ruff>=0.1",
+    "rich>=13.0.0",
+    "prompt_toolkit>=3.0.0",
+    "humanize>=4.0.0",
 ]
 
 [project.scripts]

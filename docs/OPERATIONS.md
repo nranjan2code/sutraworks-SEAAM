@@ -51,6 +51,7 @@ python3 main.py [COMMAND] [OPTIONS]
 | Command | Description | Example |
 |---------|-------------|---------|
 | *(none)* | Start the agent (default) | `python3 main.py` |
+| `-i` | Interactive REPL mode | `python3 main.py -i` |
 | `status` | Show system health and vitals | `python3 main.py status` |
 | `organs` | List organs with health status | `python3 main.py organs` |
 | `goals` | Show goal satisfaction progress | `python3 main.py goals` |
@@ -64,6 +65,7 @@ python3 main.py [COMMAND] [OPTIONS]
 | Option | Description | Example |
 |--------|-------------|---------|
 | `--help` | Show help message | `python3 main.py --help` |
+| `-i, --interactive` | Launch interactive REPL | `python3 main.py -i` |
 | `--reset` | Reset to tabula rasa state | `python3 main.py --reset` |
 | `--config CONFIG` | Use custom config file | `python3 main.py --config prod.yaml` |
 | `--log-level LEVEL` | Override log level | `python3 main.py --log-level DEBUG` |
@@ -151,6 +153,100 @@ The `--reset` flag performs a **Robinson Crusoe reset**:
 # Watch the system rebuild from nothing
 python3 main.py --reset
 ```
+
+---
+
+## Interactive CLI
+
+SEAA includes a best-in-class interactive terminal experience.
+
+### Installation
+
+```bash
+# Install CLI dependencies
+pip install seaa[cli]
+
+# Or manually
+pip install rich prompt_toolkit humanize
+```
+
+### Launch
+
+```bash
+python3 main.py -i
+```
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| Rich UI | Tables, panels, spinners, live dashboard |
+| Natural Language | "how are you?" -> status command |
+| Typo Tolerance | "staus" auto-corrects to "status" |
+| Tab Completion | Commands, arguments, organ names |
+| History | Saved to `~/.seaa_history` |
+| Background Genesis | Start/stop agent while interacting |
+
+### REPL Commands
+
+```bash
+● Robinson > status          # Show health (Rich panel)
+● Robinson > how are you?    # Natural language works
+● Robinson > staus           # Auto-corrected
+● Robinson > organs --all    # With arguments
+● Robinson > dashboard       # Live full-screen view
+● Robinson > start           # Start Genesis in background
+● Robinson > stop            # Stop Genesis
+● Robinson > help            # Show all commands
+● Robinson > exit            # Exit REPL
+```
+
+### Command Reference
+
+| Command | Aliases | Natural Triggers |
+|---------|---------|------------------|
+| `status` | `s` | "how are you", "health" |
+| `organs` | `o`, `list` | "show organs" |
+| `goals` | `g` | "progress", "objectives" |
+| `failures` | `f`, `errors` | "what failed" |
+| `dashboard` | `d`, `dash` | "live view" |
+| `watch` | `w` | "stream events" |
+| `timeline` | `t`, `history` | "evolution history" |
+| `identity` | `id`, `who` | "who are you" |
+| `start` | `run`, `awaken` | "wake up" |
+| `stop` | `kill`, `sleep` | "go to sleep" |
+| `evolve` | `e`, `grow` | "evolve", "grow" |
+| `help` | `?`, `commands` | "what can you do" |
+| `exit` | `q`, `quit`, `bye` | "goodbye" |
+
+### Live Dashboard
+
+The dashboard provides a full-screen, auto-updating view:
+
+```bash
+● Robinson > dashboard
+```
+
+Press `q` or `Ctrl+C` to exit.
+
+### Background Genesis
+
+```bash
+● Robinson > start       # Start Genesis
+Starting Genesis...
+Genesis awakened.
+
+● Robinson > status      # Query while running
+...
+Genesis:    RUNNING
+...
+
+● Robinson > stop        # Stop Genesis
+Stopping Genesis...
+Genesis asleep.
+```
+
+See [CLI.md](CLI.md) for complete documentation.
 
 ---
 
@@ -405,9 +501,10 @@ python3 -m pytest tests/unit/test_bus.py::TestEventBus::test_subscribe_and_publi
 | Assimilator | 6 | Module loading, validation, batch |
 | Genealogy | 4 | Git init, commit, revert |
 | Auto-Immune | 3 | Revert triggers, failure handling |
-| **Integration** | **28** | Code validation, circuit breaker, goals, config |
 | Observability | 20 | Identity, Beacon, Observer, thread-safety |
-| **Total** | **109** | All passing |
+| **CLI** | **40** | Fuzzy matching, natural language, formatters |
+| **Integration** | **28** | Code validation, circuit breaker, goals, config |
+| **Total** | **129** | All passing |
 
 ### Code Quality
 
@@ -831,8 +928,45 @@ sudo systemctl status seaa
 
 ---
 
+---
+
+## Interactive CLI Troubleshooting
+
+#### "Interactive mode requires additional dependencies"
+
+Install the CLI dependencies:
+```bash
+pip install seaa[cli]
+# or
+pip install rich prompt_toolkit
+```
+
+#### Tab completion not working
+
+- Ensure `prompt_toolkit` is installed
+- Use a compatible terminal (most modern terminals work)
+- Check `~/.inputrc` for conflicting keybindings
+
+#### Dashboard not rendering correctly
+
+- Ensure terminal is at least 80x24
+- Use a terminal that supports Unicode
+- Try resizing the terminal window
+
+#### Genesis won't start from REPL
+
+Check for:
+- Ollama not running: `curl http://localhost:11434/api/tags`
+- Invalid configuration in `config.yaml`
+- Port conflicts with existing processes
+
+Use `python3 main.py --log-level DEBUG` to see detailed errors.
+
+---
+
 ## 📚 Additional Resources
 
 - [Architecture Deep Dive](ARCHITECTURE.md)
 - [Design Specifications](DESIGN.md)
+- [Interactive CLI Guide](CLI.md)
 - [GitHub Repository](https://github.com/sutraworks/seaa)
