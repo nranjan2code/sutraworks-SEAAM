@@ -16,67 +16,75 @@ app.mount("/frontend", StaticFiles(directory="frontend/dist"), name="static")
 websockets = set()
 event_queue = queue.Queue()
 
-@app.get("/", response_class=HTMLResponse)
-async def read_root():
-    return FileResponse("frontend/dist/index.html")
-
-@app.websocket("/api/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    websockets.add(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            # Handle incoming messages if needed
-    except Exception as e:
-        logger.error(f"WebSocket error: {e}")
-    finally:
-        websockets.remove(websocket)
-
-def event_callback(event):
+def websocket_callback(event: Event):
     event_queue.put(event)
 
-@app.get("/api/status")
-async def get_status():
-    return {"status": "running"}
+class WebAPIService:
+    def __init__(self):
+        bus.subscribe('all', websocket_callback)
+        self.start_web_server()
+        self.start_background_sender()
 
-@app.get("/api/vitals")
-async def get_vitals():
-    return {"vitals": "healthy"}
+    def start_web_server(self):
+        thread = threading.Thread(target=self.run_server, daemon=True)
+        thread.start()
 
-@app.get("/api/organs")
-async def get_organs():
-    return {"organs": []}
+    def run_server(self):
+        uvicorn.run(app, host=config.api.host, port=config.api.port)
 
-@app.get("/api/goals")
-async def get_goals():
-    return {"goals": []}
+    def start_background_sender(self):
+        thread = threading.Thread(target=self.send_events_to_clients, daemon=True)
+        thread.start()
 
-@app.get("/api/timeline")
-async def get_timeline():
-    return {"timeline": []}
-
-@app.get("/api/failures")
-async def get_failures():
-    return {"failures": []}
-
-def background_sender():
-    while True:
-        try:
+    async def send_events_to_clients(self):
+        while True:
             event = event_queue.get()
-            for websocket in websockets:
-                await websocket.send_text(event.data)
+            for websocket in list(websockets):
+                await self.send_event_to_websocket(websocket, event)
+
+    @app.websocket("/api/ws")
+    async def websocket_endpoint(websocket: WebSocket):
+        await websocket.accept()
+        websockets.add(websocket)
+        try:
+            while True:
+                data = await websocket.receive_text()
+                # Handle incoming messages if needed
         except Exception as e:
-            logger.error(f"Background sender error: {e}")
+            logger.error(f"WebSocket error: {e}")
+        finally:
+            websockets.remove(websocket)
 
+    async def send_event_to_websocket(self, websocket: WebSocket, event: Event):
+        try:
+            await websocket.send_json(event.dict())
+        except Exception as e:
+            logger.error(f"Failed to send event to websocket: {e}")
+
+    @app.get("/api/status", response_class=HTMLResponse)
+    async def status(request: Request):
+        return "System is running"
+
+    @app.get("/api/vitals")
+    async def vitals():
+        return {"status": "healthy"}
+
+    @app.get("/api/organs")
+    async def organs():
+        return {"organs": []}
+
+    @app.get("/api/goals")
+    async def goals():
+        return {"goals": []}
+
+    @app.get("/api/timeline")
+    async def timeline():
+        return {"timeline": []}
+
+    @app.get("/api/failures")
+    async def failures():
+        return {"failures": []}
+
+# REQUIRED ENTRY POINT (zero required args)
 def start():
-    bus.subscribe('*', event_callback)
-    
-    def run_server():
-        uvicorn.run(app, host=config.api.host, port=config.api.port, workers=config.api.workers)
-
-    server_thread = threading.Thread(target=run_server, daemon=True)
-    server_thread.start()
-
-    sender_thread = threading.Thread(target=background_sender, daemon=True)
-    sender_thread.start()
+    service = WebAPIService()
