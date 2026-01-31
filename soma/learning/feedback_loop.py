@@ -8,50 +8,47 @@ logger = get_logger("soma.learning.feedback_loop")
 
 class FeedbackLoop:
     def __init__(self):
-        bus.subscribe('recommendation.executed', self.on_recommendation_executed)
-        bus.subscribe('action.outcome', self.on_action_outcome)
-        # Access config using attribute access:
-        self.collection_interval_seconds = getattr(config.metrics, 'collection_interval_seconds', 60)
+        self.success_count = 0
+        self.failure_count = 0
+        self.threshold = getattr(config, 'feedback_threshold', 0.5)
+        bus.subscribe('anomaly.detected', self.on_anomaly_detected)
+        bus.subscribe('automatic.corrected', self.on_automatic_corrected)
 
-    def on_recommendation_executed(self, event):
-        logger.info(f"Recommendation executed: {event.data}")
+    def on_anomaly_detected(self, event):
+        logger.info(f"Anomaly detected: {event.data}")
 
-    def on_action_outcome(self, event):
-        outcome_data = event.data
-        success_rate = outcome_data.get('success_rate', 0)
-        time_taken = outcome_data.get('time_taken', 0)
-        resource_utilization = outcome_data.get('resource_utilization', 0)
-        user_satisfaction = outcome_data.get('user_satisfaction', 0)
+    def on_automatic_corrected(self, event):
+        outcome = event.data.get('outcome')
+        if outcome == 'success':
+            self.success_count += 1
+        elif outcome == 'failure':
+            self.failure_count += 1
 
-        logger.info(f"Action Outcome: Success Rate={success_rate}, Time Taken={time_taken}, Resource Utilization={resource_utilization}, User Satisfaction={user_satisfaction}")
+        total_actions = self.success_count + self.failure_count
+        success_rate = self.success_count / total_actions if total_actions > 0 else 0
 
-        # Provide feedback to refine recommendation system and predictive models
-        feedback_data = {
-            'success_rate': success_rate,
-            'time_taken': time_taken,
-            'resource_utilization': resource_utilization,
-            'user_satisfaction': user_satisfaction
-        }
-        bus.publish(Event(event_type="feedback.received", data=feedback_data))
+        logger.info(f"Action outcome: {outcome}, Success rate: {success_rate:.2f}")
 
-    def start_feedback_loop(self):
-        while True:
-            # Periodically collect and analyze metrics
-            self.collect_and_analyze_metrics()
-            time.sleep(self.collection_interval_seconds)
+        if success_rate < self.threshold:
+            self.adjust_threshold(success_rate)
+        else:
+            self.update_criteria()
 
-    def collect_and_analyze_metrics(self):
-        # Placeholder for metric collection logic
-        logger.info("Collecting and analyzing metrics...")
-        # This function should gather metrics from various sources and publish them
-        metrics_data = {
-            'metric1': 10,
-            'metric2': 20
-        }
-        bus.publish(Event(event_type="metrics.collected", data=metrics_data))
+    def adjust_threshold(self, success_rate):
+        new_threshold = max(0.1, success_rate - 0.1)  # Ensure threshold doesn't go below 0.1
+        logger.info(f"Adjusting threshold from {self.threshold} to {new_threshold}")
+        self.threshold = new_threshold
+
+    def update_criteria(self):
+        logger.info("Updating decision-making criteria based on performance")
+        # Placeholder for updating internal models and criteria
+        bus.publish(Event(event_type="feedback_loop.updated", data={
+            "action_type": "update_criteria",
+            "outcome": "success",
+            "updated_criteria": {"threshold": self.threshold}
+        }))
 
 # REQUIRED ENTRY POINT (zero required args)
 def start():
-    feedback_loop_organ = FeedbackLoop()
-    thread = threading.Thread(target=feedback_loop_organ.start_feedback_loop, daemon=True)
-    thread.start()
+    feedback_loop = FeedbackLoop()
+    # No need for a background thread here as we are only subscribing to events
