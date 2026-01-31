@@ -1,541 +1,408 @@
 <div align="center">
-  <img src="docs/images/seaa_hero_logo.png" alt="Self-Evolving Autonomous Agent Logo" width="300px">
-
-  # Self-Evolving Autonomous Agent
-  ### The agent that writes itself
+  <h1>🧬 Self-Evolving Autonomous Agent (SEAA)</h1>
+  <h3>The Agent That Writes Itself</h3>
 
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-  [![Tests](https://img.shields.io/badge/tests-129%20passing-success.svg)]()
-  [![Status: Alive](https://img.shields.io/badge/Status-Autopoietic-success.svg)]()
+  [![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success.svg)]()
+  [![Autonomous Evolution](https://img.shields.io/badge/Autonomous-Evolving-blue.svg)]()
 
-  > *"The code that writes itself."*
+  > *An experiment in digital autopoiesis—code that creates, evolves, and improves itself.*
 
-  <p align="center">
-    <a href="#-philosophy">Philosophy</a> •
-    <a href="#-architecture">Architecture</a> •
-    <a href="#-quick-start">Quick Start</a> •
-    <a href="#-observability">Observability</a> •
-    <a href="#-testing">Testing</a> •
-    <a href="docs/">Full Docs</a>
-  </p>
+  [Installation](#-installation) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Documentation](#-documentation) • [GitHub](https://github.com/nranjan2code/sutraworks-SEAAM)
 
 </div>
 
 ---
 
-## Philosophy
+## 🎯 What is SEAA?
 
-The Self-Evolving Autonomous Agent (SEAA) is not just an agent; it is an experiment in **Digital Autopoiesis** (self-creation).
+SEAA is a self-evolving autonomous agent that:
 
-Unlike traditional software which is architected by humans, SEAA starts as a minimal biological kernel. It possesses:
-1.  **A Will**: The drive to exist and evolve (`Genesis`)
-2.  **A Mind**: The ability to reason about its own structure (`Architect`)
-3.  **A Body**: Which is built, organ by organ, by the system itself (`Soma`)
-4.  **An Identity**: A persistent sense of self that survives resets (`Identity`)
+- **Creates itself** - Starts with a minimal kernel and evolves by generating its own organs (Python modules)
+- **Remembers itself** - Instance identity persists across resets (`.identity.json`)
+- **Learns from failures** - All failures recorded in DNA; circuit breaker prevents cascading errors
+- **Evolves autonomously** - System designs new capabilities, generates code, and integrates them without human intervention
+- **Maintains clean code** - Immutable kernel protects core logic; runtime organs isolated from git history
+- **Ships with everything** - 25 core organs included; ready to deploy and run
 
-It reasons about its goals, designs its own architecture, generates the necessary Python code, installs its own dependencies, and hot-loads the new capabilities—all without human intervention.
+### Key Innovation: Dual-Layer Architecture
+
+```
+┌─────────────────────────────────────────┐
+│  DEVELOPER LAYER (.git repository)      │
+│  • seaa/ (immutable kernel)              │
+│  • soma/ (25 core organs - tracked)      │
+│  • tests/, docs/ (human-written)         │
+├─────────────────────────────────────────┤
+│  SYSTEM LAYER (DNA persistence)         │
+│  • dna.json (current state)              │
+│  • .dna_backups/ (evolution history)     │
+│  • .identity.json (persists on resets!)  │
+│  • soma/generated/ (runtime organs)      │
+└─────────────────────────────────────────┘
+```
+
+**Result:** System evolves independently while developers maintain clean git history!
+
+---
+
+## ⚡ Installation
+
+### One-Command Setup
+```bash
+git clone https://github.com/nranjan2code/sutraworks-SEAAM.git
+cd sutraworks-SEAAM
+./install.sh
+```
+
+The installer automatically:
+- ✓ Checks Python 3.9+
+- ✓ Creates isolated virtual environment
+- ✓ Installs all dependencies
+- ✓ Configures LLM (Ollama, Gemini, or custom)
+- ✓ Verifies installation
+- ✓ Runs tests
+
+### Installation Options
+
+```bash
+./install.sh                  # Standard installation
+./install.sh --dev            # With development tools
+./install.sh --with-cli       # With interactive CLI
+./install.sh --skip-llm       # Use existing LLM config
+```
+
+### Alternative: pip Installation
+```bash
+pip install git+https://github.com/nranjan2code/sutraworks-SEAAM.git
+```
+
+### LLM Configuration
+
+**Ollama (Recommended for local development)**
+```bash
+ollama pull qwen2.5-coder:14b
+ollama serve
+```
+SEAA is pre-configured for Ollama at `http://localhost:11434`
+
+**Google Gemini (Cloud)**
+```bash
+export GOOGLE_API_KEY=your_key_here
+```
+Update `config.yaml` to use Gemini model.
+
+See [docs/guides/INSTALL.md](docs/guides/INSTALL.md) for detailed setup.
+
+---
+
+## 🚀 Quick Start
+
+### Start the Agent
+```bash
+python3 main.py
+```
+
+### Interactive Mode (Rich UI + REPL)
+```bash
+python3 main.py -i
+```
+
+### Common Commands
+```bash
+python3 main.py status              # System health
+python3 main.py organs              # List organs with health
+python3 main.py identity --name X   # Set instance name
+python3 main.py watch               # Live event stream
+python3 main.py goals               # Goal satisfaction progress
+python3 main.py failures            # Failure records
+python3 main.py --reset             # Reset to tabula rasa (keeps identity!)
+```
+
+Full command reference: See [docs/guides/QUICK_START.md](docs/guides/QUICK_START.md)
+
+---
+
+## 🏗️ Architecture
+
+### Four Biological Layers
+
+#### 1. **Kernel** (Immutable Foundation)
+Located in `seaa/kernel/`, the kernel is unchangeable at runtime and provides:
+- `genesis.py` - Evolution orchestrator
+- `bus.py` - Event communication
+- `assimilator.py` - Dynamic module loading
+- `materializer.py` - Atomic file operations
+- `immunity.py` - Error recovery
+- `identity.py` - Persistent instance identity
+- `observer.py` - System introspection
+
+**Protection:** Cannot be modified by the system itself; all code is validated before execution.
+
+#### 2. **Cortex** (The Mind)
+Located in `seaa/cortex/`, responsible for reasoning:
+- `architect.py` - Designs new organs based on DNA
+- `prompt_loader.py` - Loads YAML reasoning templates
+
+#### 3. **Soma** (The Body)
+`soma/` directory contains organs created by the system:
+
+**Core Organs (shipped & tracked):**
+- `soma/perception/` - File system monitoring
+- `soma/memory/` - Event journaling
+- `soma/interface/` - REST API & dashboards
+- `soma/storage/` - Data persistence (SQLite)
+- `soma/extensions/` - Metrics & health checks
+- `soma/learning/` - Self-improvement modules
+- Plus 19 more...
+
+**Runtime Organs (auto-generated, not tracked):**
+- `soma/generated/` - New organs created at runtime
+- `soma/experimental/` - Experimental features
+
+#### 4. **Observability** (The Eyes)
+Always available, even when soma is broken:
+- Instance identity (UUID, name, lineage)
+- System health status
+- Organ health metrics
+- Event streaming
+- Evolution timeline
+
+---
+
+## 🛡️ Autonomous Self-Correction
+
+SEAA is designed to survive failures in its own evolution:
+
+```
+Organ Fails → Classify Error
+             ├─→ Import Error → Missing soma module? → Add to blueprint
+             ├─→ Validation Error → Invalid code? → Architect redesigns
+             ├─→ Runtime Error → Stop organ, log failure
+             └─→ Circuit Open → Skip for 30 min (configurable)
+```
+
+**Safety Mechanisms:**
+- **Code Validation** - AST checking, forbidden imports detection (pip, subprocess, eval)
+- **Circuit Breaker** - 3 failures = 30-minute cooldown (prevents cascading failures)
+- **Module Contracts** - All organs must have valid `start()` function
+- **DNA Integrity** - SHA-256 verification
+- **Learning** - All failures recorded for the Architect to learn from
 
 ---
 
 ## 📚 Documentation
 
-**All documentation has been organized in the [docs/](docs/) directory.**
+All documentation is organized in `docs/`:
 
 | Need | Location |
 |------|----------|
-| **Installation** | [docs/guides/INSTALL.md](docs/guides/INSTALL.md) |
-| **5-Minute Start** | [docs/guides/QUICK_START.md](docs/guides/QUICK_START.md) |
-| **Architecture** | [docs/architecture/](docs/architecture/) |
-| **Design & Implementation** | [docs/design/](docs/design/) |
+| **Installation Guide** | [docs/guides/INSTALL.md](docs/guides/INSTALL.md) |
+| **5-Minute Quick Start** | [docs/guides/QUICK_START.md](docs/guides/QUICK_START.md) |
+| **Where to Start** | [docs/guides/START_HERE.md](docs/guides/START_HERE.md) |
+| **System Architecture** | [docs/architecture/ARCHITECTURE_FINAL.md](docs/architecture/ARCHITECTURE_FINAL.md) |
+| **Dual-Layer Design** | [docs/architecture/ARCHITECTURE_LAYERS.md](docs/architecture/ARCHITECTURE_LAYERS.md) |
+| **Design Patterns** | [docs/design/CORE_ORGANS_DESIGN.md](docs/design/CORE_ORGANS_DESIGN.md) |
+| **Current Organs** | [docs/design/CORE_ORGANS_IMPLEMENTATION.md](docs/design/CORE_ORGANS_IMPLEMENTATION.md) |
 | **Project Status** | [docs/evolution/CURRENT_STATUS.md](docs/evolution/CURRENT_STATUS.md) |
-| **Full Documentation Index** | [docs/](docs/) |
+| **Documentation Hub** | [docs/README.md](docs/README.md) |
 
 ---
 
-## Architecture
+## 💡 Key Features
 
-<div align="center">
-  <img src="docs/images/seaa_architecture_clean.png" alt="SEAA Architecture" width="70%">
-</div>
+### ✅ Production Ready
+- Comprehensive error handling
+- Circuit breaker pattern
+- DNA integrity verification
+- Structured logging (JSON/colored output)
+- Thread-safe operations
 
-The system is composed of four biological layers:
+### ✅ Distribution Ready
+- One-command installation (`./install.sh`)
+- pip-installable package
+- All core organs included
+- Professional documentation (31 files)
+- Clean repository (1 markdown file in root)
 
-### 1. **KERNEL** (The Immutable Seed)
-Located in `seaa/kernel/`, the kernel is the DNA of the agent—it cannot be modified by the system itself.
+### ✅ Developer Friendly
+- Clear architecture
+- Extensive documentation
+- Easy to extend with new organs
+- Interactive REPL with rich UI
+- Comprehensive CLI commands
 
-| Module | Purpose |
-|--------|---------|
-| `genesis.py` | Slim orchestrator coordinating the evolution lifecycle |
-| `bus.py` | Async-capable EventBus (nervous system) for organ communication |
-| `assimilator.py` | Dynamic module loading and thread-based activation |
-| `materializer.py` | Atomic file writes with kernel protection |
-| `immunity.py` | Error recovery and dependency resolution |
-| `genealogy.py` | Evolutionary memory (local git) and rollback capability |
-| `identity.py` | Instance identity (UUID, name, lineage) - survives resets |
-| `beacon.py` | Minimal health endpoint for mesh queries |
-| `observer.py` | Extended local observation with event streaming |
-| `protocols.py` | Observable contracts for mesh interoperability |
-
-### 2. **CORTEX** (The Mind)
-Located in `seaa/cortex/`, the cortex is responsible for reasoning and design.
-
-| Module | Purpose |
-|--------|---------|
-| `architect.py` | Reflects on DNA state and designs new organs |
-| `prompt_loader.py` | Loads externalized YAML prompt templates |
-| `prompts/` | YAML templates for architect_reflect, agent_factory, error_feedback |
-
-### 3. **SOMA** (The Body)
-The `soma/` directory contains **evolved organs**—modules written by the system itself:
-- `soma/perception/` - Filesystem watchers, sensors
-- `soma/memory/` - Event journals, databases
-- `soma/interface/` - Dashboards, APIs
-- `soma/extensions/` - Custom metrics, health checks (evolvable)
-- `soma/mesh/` - Fleet discovery, remote queries (evolvable)
-
-### 4. **OBSERVABILITY** (The Eyes)
-The observability layer provides introspection into the running system:
-
-| Component | Type | Purpose |
-|-----------|------|---------|
-| `Identity` | Static (Kernel) | Who am I? Survives resets |
-| `Beacon` | Static (Kernel) | Minimal health endpoint |
-| `Observer` | Static (Kernel) | Local query + event streaming |
-| `Protocols` | Static (Kernel) | Mesh-ready contracts |
-| `soma.interface.*` | Evolvable | Rich dashboards, TUI |
-| `soma.extensions.*` | Evolvable | Custom metrics |
-
-### Supporting Infrastructure
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| **Core** | `seaa/core/` | Logging, configuration, exceptions |
-| **DNA** | `seaa/dna/` | Schema validation, repository with atomic writes |
-| **Connectors** | `seaa/connectors/` | LLM Gateway (Ollama/Gemini abstraction) |
+### ✅ Autonomous Evolution
+- Designs its own architecture
+- Generates Python code
+- Validates and integrates new modules
+- Learns from failures
+- Maintains evolution history
 
 ---
 
-## Autonomous Self-Correction
+## 🔄 The Evolution Cycle
 
-The agent is designed to survive failures in its own evolution:
-
-```mermaid
-flowchart TD
-    A[Organ Fails] --> B{Classify Error}
-    B -->|Import Error| C{Internal or External?}
-    C -->|Internal soma.*| D[Add to Blueprint\nRequest Evolution]
-    C -->|External package| E{Allowed?}
-    E -->|Yes| F[pip install]
-    E -->|No| G[Report Failure]
-    B -->|Validation Error| H[Log to DNA\nArchitect Redesigns]
-    B -->|Runtime Error| I[Stop Organ\nLog Failure]
-    B -->|Circuit Open| J[Skip Until Cooldown]
+```
+1. System analyzes DNA (current state)
+2. Architect designs new organs to satisfy goals
+3. System generates Python code
+4. Code is validated (AST, imports, signature)
+5. Organ is materialized (atomic file write)
+6. Organ is assimilated (hot-loaded)
+7. Results recorded in DNA for learning
 ```
 
-- **Code Validation**: AST-based syntax checking, forbidden imports detection (pip, subprocess, eval), start() signature validation
-- **Circuit Breaker**: After 3 failures, an organ is skipped for 30 minutes (configurable)
-- **Internal Dependencies**: Missing `soma.*` modules are added to the blueprint for evolution
-- **External Dependencies**: Only allowlisted packages can be installed (security-first)
-- **Validation**: Every organ must have a `start()` function with zero required arguments
-- **Learning**: All failures are recorded in DNA for the Architect to learn from
-- **Measurable Goals**: Goals can specify required organ patterns and auto-satisfy when met
+This cycle repeats every 30 seconds (configurable).
 
 ---
 
-## Quick Start
+## 🎓 For Different Roles
 
-### Prerequisites
-- Python 3.9+
-- [Ollama](https://ollama.ai/) with a code model (default: `qwen2.5-coder:14b`)
+### Users
+Want to deploy and run SEAA?
+1. Clone repository
+2. Run `./install.sh`
+3. Start with `python3 main.py`
+4. Read [QUICK_START.md](docs/guides/QUICK_START.md)
 
-### Installation
+### Developers
+Want to understand the system?
+1. Read [START_HERE.md](docs/guides/START_HERE.md)
+2. Study [ARCHITECTURE_FINAL.md](docs/architecture/ARCHITECTURE_FINAL.md)
+3. Review [ARCHITECTURE_LAYERS.md](docs/architecture/ARCHITECTURE_LAYERS.md)
+4. Explore source code in `seaa/`
 
-```bash
-# Clone the repository
-git clone https://github.com/sutraworks/seaa.git
-cd seaa
+### Contributors
+Want to add features?
+1. Follow [docs/internal/CLAUDE.md](docs/internal/CLAUDE.md)
+2. Study [CORE_ORGANS_DESIGN.md](docs/design/CORE_ORGANS_DESIGN.md)
+3. Check [IMPLEMENTATION_ROADMAP.md](docs/design/IMPLEMENTATION_ROADMAP.md)
+4. Submit pull requests
 
-# Install dependencies
-pip install -e .
-```
-
-### Running
-
-```bash
-# Start Ollama (in a separate terminal)
-ollama run qwen2.5-coder:14b
-
-# Ignite the system
-python3 main.py
-```
-
-### Command Line Interface
-
-```bash
-python3 main.py --help
-
-# Run the agent (default)
-python3 main.py
-
-# Interactive mode (Rich UI + REPL)
-python3 main.py -i
-
-# Query commands (no agent startup)
-python3 main.py status              # System health
-python3 main.py organs              # List organs with health
-python3 main.py goals               # Goal satisfaction progress
-python3 main.py failures            # Failure records
-python3 main.py identity            # Show instance identity
-python3 main.py identity --name X   # Set instance name
-python3 main.py timeline            # Evolution history
-python3 main.py watch               # Live event stream
-
-# Options
-python3 main.py --reset             # Reset to tabula rasa
-python3 main.py --config FILE       # Custom config file
-python3 main.py --log-level DEBUG   # Override log level
-```
-
-### Interactive Mode
-
-SEAA includes a best-in-class interactive CLI with Rich terminal UI:
-
-```bash
-# Install CLI dependencies
-pip install seaa[cli]
-
-# Launch interactive REPL
-python3 main.py -i
-```
-
-Features:
-- **Rich UI**: Tables, panels, and live dashboard
-- **Natural Language**: Ask "how are you?" or "show organs"
-- **Typo Tolerance**: Auto-corrects "staus" to "status"
-- **Tab Completion**: Complete commands and arguments
-- **Background Genesis**: Start/stop the agent while interacting
-
-```
-● Robinson > how are you?
-╭──────────────────────────────────────╮
-│  Robinson (713d8815)                 │
-├──────────────────────────────────────┤
-│  Status:     HEALTHY                 │
-│  Organs:     3/3 healthy             │
-│  Goals:      2/4 satisfied           │
-╰──────────────────────────────────────╯
-
-● Robinson > dashboard    # Live full-screen view
-● Robinson > start        # Start Genesis in background
-● Robinson > watch        # Stream events
-```
-
-See [Interactive CLI Guide](docs/CLI.md) for full documentation.
+### Researchers
+Interested in the design?
+1. Read [ARCHITECTURE_VISION.md](docs/architecture/ARCHITECTURE_VISION.md)
+2. Review [ARCHITECTURE_EVOLUTION.md](docs/architecture/ARCHITECTURE_EVOLUTION.md)
+3. Check [evolution reports](docs/evolution/)
+4. Publish your findings!
 
 ---
 
-## Observability
+## 📋 Directory Structure
 
-SEAA has a built-in observability layer that's always available—even when soma is broken.
-
-### Instance Identity
-
-Each SEAA instance has a persistent identity stored in `.identity.json`:
-
-```bash
-$ python3 main.py identity --name Robinson
-Instance renamed to: Robinson
-
-$ python3 main.py identity
-Instance Identity:
-----------------------------------------
-ID:       713d8815-6867-409c-87a1-a2ae27aa3276
-Name:     Robinson
-Genesis:  2026-01-30T08:28:34.921116Z
-Lineage:  56271deda1e156e0
+```
+.
+├── README.md                 ← You are here
+├── install.sh                ← One-command installer
+├── setup.py                  ← pip configuration
+├── main.py                   ← Entry point
+├── config.yaml               ← System configuration
+├── requirements.txt          ← Dependencies
+├── requirements-dev.txt      ← Dev dependencies
+│
+├── seaa/                     ← Immutable kernel (never modified by system)
+│   ├── kernel/               (orchestration, event bus, materializer)
+│   ├── core/                 (logging, config, exceptions)
+│   ├── dna/                  (persistence, validation)
+│   ├── cortex/               (reasoning, design)
+│   ├── cli/                  (interactive REPL)
+│   └── connectors/           (LLM abstraction)
+│
+├── soma/                     ← Evolved organs
+│   ├── perception/           (✓ tracked, file system monitoring)
+│   ├── memory/               (✓ tracked, event journals)
+│   ├── interface/            (✓ tracked, REST API)
+│   ├── storage/              (✓ tracked, SQLite)
+│   ├── extensions/           (✓ tracked, metrics)
+│   ├── learning/             (✓ tracked, self-improvement)
+│   ├── generated/            (runtime organs, ignored)
+│   └── experimental/         (experimental, ignored)
+│
+├── tests/                    ← Comprehensive test suite
+│
+├── docs/                     ← Professional documentation
+│   ├── guides/               (installation, quick start)
+│   ├── architecture/         (system design)
+│   ├── design/               (implementation specs)
+│   ├── evolution/            (project history)
+│   └── internal/             (reference materials)
+│
+└── .gitignore                ← Tracks core organs, ignores system state
 ```
 
-Identity survives DNA resets—the instance knows who it is even after `--reset`.
-
-### System Status
-
-```bash
-$ python3 main.py status
-
-Robinson (713d8815)
-========================================
-Status:      HEALTHY
-Uptime:      3600s
-DNA:         56271deda1e156e0
-
-Organs:      3/3 healthy
-Goals:       2/4 satisfied
-Evolutions:  3
-Pending:     0
-```
-
-### Organ Health
-
-```bash
-$ python3 main.py organs
-
-Organs:
-------------------------------------------------------------
-  ● ✓  soma.perception.observer
-  ● ✓  soma.memory.journal
-  ● !  soma.interface.dashboard
-        └─ Connection refused on port 5000...
-```
-
-### Live Event Stream
-
-```bash
-$ python3 main.py watch
-Watching events... (Ctrl+C to stop)
-------------------------------------------------------------
-[14:32:15] organ.evolved: {'organ': 'soma.perception.observer'}
-[14:32:16] organ.integrated: {'organ': 'soma.perception.observer'}
-[14:32:45] system.heartbeat: {'running_organs': 3, 'pending': 0}
-```
-
-### JSON Output
-
-All commands support `--json` for programmatic access:
-
-```bash
-$ python3 main.py status --json
-{
-  "identity": {"id": "713d8815...", "name": "Robinson"},
-  "vitals": {
-    "alive": true,
-    "organ_count": 3,
-    "healthy_organs": 3,
-    "goals_satisfied": 2,
-    "goals_total": 4
-  }
-}
-```
-
-### Mesh-Ready Design
-
-The observability layer is designed for future mesh networks:
-
-| Layer | Scope | Purpose |
-|-------|-------|---------|
-| **Beacon** | Universal | Minimal health query (works over network) |
-| **Observer** | Local | Rich introspection + event streaming |
-| **Protocols** | Contract | Observable interfaces for mesh interop |
-
-Any SEAA instance can query another via the Beacon protocol—enabling fleet monitoring.
+See [docs/internal/DIRECTORY.md](docs/internal/DIRECTORY.md) for details.
 
 ---
 
-## Testing
+## 🌱 Example: What SEAA Can Do
 
-The agent has a comprehensive test suite with **129 passing tests**.
-
-```bash
-# Run all tests
-python3 -m pytest tests/ -v
-
-# Run with coverage
-python3 -m pytest tests/ --cov=seaa --cov-report=term-missing
-
-# Run specific test modules
-python3 -m pytest tests/unit/test_bus.py -v
-python3 -m pytest tests/unit/test_schema.py -v
-python3 -m pytest tests/unit/test_cli.py -v
-python3 -m pytest tests/integration/test_validation.py -v
+### Example 1: Autonomous Organ Evolution
+SEAA detects it needs file system monitoring:
+```
+Genesis: "We need to perceive the file system"
+    ↓
+Architect: "I'll design a file_system_observer organ"
+    ↓
+[Generates Python code]
+    ↓
+Validator: "Code looks good ✓"
+    ↓
+Materializer: [Atomic file write to soma/perception/file_system_observer.py]
+    ↓
+Assimilator: [Hot-load the organ]
+    ↓
+DNA: "soma.perception.file_system_observer integrated ✓"
 ```
 
-### Test Coverage
+### Example 2: Error Recovery
+A REST API organ crashes:
+```
+Error: "Connection refused"
+    ↓
+Immunity: "Attempt 1/3 - retry in 30 min"
+    ↓
+[30 minutes later]
+    ↓
+Immunity: "Attempt 2/3 - retry"
+    ↓
+If still failing after 3 attempts: Circuit Open → Skip for 30 min
+    ↓
+DNA: [Records failure for Architect to learn from]
+```
 
-| Module | Tests | Coverage |
-|--------|-------|----------|
-| EventBus | 12 | Subscribe, publish, async, unsubscribe, drain |
-| DNA Schema | 17 | Serialization, legacy migration, all operations |
-| Materializer | 16 | Atomic writes, kernel protection, security (path traversal) |
-| Assimilator | 6 | Module integration, validation, batch |
-| Auto-Immune | 3 | Revert, rollback, failure handling |
-| Genealogy | 4 | Git init, commit, revert |
-| Observability | 20 | Identity, Beacon, Observer, thread-safety |
-| **CLI** | **40** | Fuzzy matching, natural language, formatters |
-| **Integration** | **28** | Code validation, circuit breaker, goals, config |
-
----
-
-## The "Robinson Crusoe" Test
-
-We verify the agent by effectively stranding it on a desert island:
-
-> We wipe its memory. We destroy its body. We uninstall its tools.
-
-```bash
-# Perform a full reset
+### Example 3: Instance Persistence
+User resets system:
+```
 python3 main.py --reset
-```
-
-**Result**: The system wakes up, realizes it is blind and tool-less, re-architects itself, re-writes its code, re-installs its tools, and resumes operation.
-
-**But it remembers who it is.** The identity persists across resets.
-
----
-
-## Project Structure
-
-```
-sutraworks-SEAA/
-├── main.py                  # Entry point with CLI commands
-├── config.yaml              # System configuration
-├── dna.json                 # Persistent DNA state
-├── .identity.json           # Instance identity (survives reset)
-├── pyproject.toml           # Build configuration
-│
-├── seaa/                   # Core system (immutable kernel)
-│   ├── core/                # Infrastructure
-│   │   ├── logging.py       # Structured JSON/colored logging
-│   │   ├── config.py        # YAML config with env overrides
-│   │   └── exceptions.py    # Typed exception hierarchy
-│   │
-│   ├── dna/                 # DNA management
-│   │   ├── schema.py        # Pydantic-style validation
-│   │   └── repository.py    # Thread-safe persistence
-│   │
-│   ├── kernel/              # The immutable seed
-│   │   ├── genesis.py       # Slim orchestrator
-│   │   ├── bus.py           # Async EventBus
-│   │   ├── assimilator.py   # Module loader
-│   │   ├── materializer.py  # Code writer
-│   │   ├── immunity.py      # Error recovery
-│   │   ├── identity.py      # Instance identity
-│   │   ├── beacon.py        # Health endpoint
-│   │   ├── observer.py      # Local introspection
-│   │   └── protocols.py     # Observable contracts
-│   │
-│   ├── cortex/              # The mind
-│   │   ├── architect.py     # System designer
-│   │   ├── prompt_loader.py # Template management
-│   │   └── prompts/         # YAML templates
-│   │
-│   ├── cli/                 # Interactive CLI (NEW)
-│   │   ├── repl.py          # REPL loop with history
-│   │   ├── commands.py      # Command registry
-│   │   ├── runtime.py       # Background Genesis manager
-│   │   ├── parsers/         # Fuzzy + natural language
-│   │   └── ui/              # Rich tables, panels, dashboard
-│   │
-│   └── connectors/          # External integrations
-│       └── llm_gateway.py   # Ollama/Gemini abstraction
-│
-├── soma/                    # Evolved organs (system-generated)
-│   ├── perception/          # Sensors
-│   ├── memory/              # Storage
-│   ├── interface/           # UI/API (evolvable)
-│   └── extensions/          # Custom metrics (evolvable)
-│
-├── tests/                   # Test suite
-│   ├── conftest.py          # Pytest fixtures
-│   └── unit/                # Unit tests
-│
-└── docs/                    # Documentation
-    ├── ARCHITECTURE.md      # System architecture
-    ├── DESIGN.md            # Design specifications
-    ├── OPERATIONS.md        # Operations manual
-    ├── CLI.md               # Interactive CLI guide (NEW)
-    └── API.md               # API reference
+    ↓
+dna.json: [Wiped - back to initial state]
+.identity.json: [PRESERVED - instance remembers itself!]
+    ↓
+System starts fresh but knows its own identity
+$ python3 main.py identity
+Robinson (550e8400-e29b-41d4-a716-446655440000)
 ```
 
 ---
 
-## Configuration
+## 🔗 Community & Support
 
-The agent uses a layered configuration system:
-
-1. **Defaults** (built-in sensible defaults)
-2. **config.yaml** (file-based configuration)
-3. **Environment variables** (highest priority)
-
-### Key Configuration Options
-
-```yaml
-# config.yaml
-llm:
-  provider: ollama           # or 'gemini'
-  model: qwen2.5-coder:14b
-  temperature: 0.1
-
-metabolism:
-  cycle_interval_seconds: 30
-  max_organs_per_cycle: 3
-  max_concurrent_organs: 20  # Resource limit
-  max_total_organs: 50       # Resource limit
-
-circuit_breaker:
-  max_attempts: 3            # Failures before circuit opens
-  cooldown_minutes: 30       # Wait time before retry
-
-security:
-  allow_pip_install: false   # Disabled by default for security
-
-logging:
-  level: INFO
-  format: colored            # or 'json' for production
-```
-
-### Environment Variables
-
-| Variable | Purpose |
-|----------|---------|
-| `SEAA_LOG_LEVEL` | Override log level |
-| `SEAA_ALLOW_PIP` | Enable pip installs ("true") |
-| `SEAA_WATCH_PATH` | Custom path for filesystem observer |
-| `OLLAMA_URL` | Custom Ollama endpoint |
-| `GEMINI_API_KEY` | Enable Gemini fallback |
+- **Documentation**: [docs/README.md](docs/README.md)
+- **Installation Help**: [docs/guides/INSTALL.md](docs/guides/INSTALL.md#troubleshooting)
+- **Report Issues**: [GitHub Issues](https://github.com/nranjan2code/sutraworks-SEAAM/issues)
+- **Contribute**: [docs/internal/CLAUDE.md](docs/internal/CLAUDE.md)
 
 ---
 
-## Documentation
+## 📄 License
 
-- **[Architecture Deep Dive](docs/ARCHITECTURE.md)**: The Kernel, Cortex, DNA, and Observability protocols
-- **[Design Blueprints](docs/DESIGN.md)**: DNA schema, evolution flow, observability design
-- **[Operations Manual](docs/OPERATIONS.md)**: Configuration, CLI commands, troubleshooting
-- **[Interactive CLI Guide](docs/CLI.md)**: REPL, natural language, Rich UI components
-- **[API Reference](docs/API.md)**: Complete API documentation
-
----
-
-## Security
-
-The agent follows security-first principles:
-
-- **Kernel Protection**: The system cannot modify `seaa/*` files
-- **Path Traversal Protection**: Module names are strictly validated with regex patterns
-- **Module Name Validation**: Only `soma.*` with valid Python identifiers can be imported
-- **Code Validation**: AST-based validation rejects:
-  - Syntax errors
-  - Forbidden imports (`pip`, `subprocess`, `os.system`, `eval`, `exec`, `ctypes`, `socket`, `pickle`, etc.)
-  - Star imports from non-seaa modules (`from os import *`)
-  - Missing or invalid `start()` function signatures
-- **Prompt Injection Protection**: Error messages are sanitized before embedding in LLM prompts
-- **DNA Integrity**: SHA-256 hash verification detects file tampering
-- **Pip Disabled by Default**: External package installation requires explicit opt-in
-- **Allowlist**: Only approved packages can be installed even when enabled
-- **Atomic Writes**: Prevents file corruption from interrupted writes
-- **Resource Limits**: Configurable max organs to prevent runaway growth
-- **Circuit Breaker**: Failing organs are temporarily disabled to prevent loops
-
----
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Run tests: `python3 -m pytest tests/ -v`
-4. Submit a pull request
+SEAA is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
-  <sub>Created by SutraWorks • 2026</sub>
+  <p><strong>Built with ❤️ for autonomous evolution</strong></p>
+  <p><a href="https://github.com/nranjan2code/sutraworks-SEAAM">GitHub</a> • <a href="docs/">Documentation</a> • <a href="docs/guides/INSTALL.md">Install</a></p>
 </div>
