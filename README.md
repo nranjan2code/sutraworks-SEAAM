@@ -405,6 +405,8 @@ Robinson (550e8400-e29b-41d4-a716-446655440000)
 ## 🔗 Community & Support
 
 - **Documentation**: [docs/README.md](docs/README.md)
+- **Management Script**: [MANAGEMENT.md](MANAGEMENT.md) - Start, stop, monitor
+- **Web API Launch**: [WEB_API_LAUNCH.md](WEB_API_LAUNCH.md) - API endpoints & frontend
 - **Installation Help**: [docs/guides/INSTALL.md](docs/guides/INSTALL.md)
 - **Troubleshooting**: [docs/guides/TROUBLESHOOTING.md](docs/guides/TROUBLESHOOTING.md)
 - **Report Issues**: [GitHub Issues](https://github.com/nranjan2code/sutraworks-SEAAM/issues)
