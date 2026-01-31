@@ -17,8 +17,9 @@
     <a href="#-quick-start">Quick Start</a> •
     <a href="#-observability">Observability</a> •
     <a href="#-testing">Testing</a> •
-    <a href="docs/OPERATIONS.md">Operations</a>
+    <a href="docs/">Full Docs</a>
   </p>
+
 </div>
 
 ---
@@ -34,6 +35,21 @@ Unlike traditional software which is architected by humans, SEAA starts as a min
 4.  **An Identity**: A persistent sense of self that survives resets (`Identity`)
 
 It reasons about its goals, designs its own architecture, generates the necessary Python code, installs its own dependencies, and hot-loads the new capabilities—all without human intervention.
+
+---
+
+## 📚 Documentation
+
+**All documentation has been organized in the [docs/](docs/) directory.**
+
+| Need | Location |
+|------|----------|
+| **Installation** | [docs/guides/INSTALL.md](docs/guides/INSTALL.md) |
+| **5-Minute Start** | [docs/guides/QUICK_START.md](docs/guides/QUICK_START.md) |
+| **Architecture** | [docs/architecture/](docs/architecture/) |
+| **Design & Implementation** | [docs/design/](docs/design/) |
+| **Project Status** | [docs/evolution/CURRENT_STATUS.md](docs/evolution/CURRENT_STATUS.md) |
+| **Full Documentation Index** | [docs/](docs/) |
 
 ---
 
