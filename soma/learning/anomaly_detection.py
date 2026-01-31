@@ -5,6 +5,7 @@ import threading
 import time
 import numpy as np
 from sklearn.ensemble import IsolationForest
+from typing import Any, Callable
 
 logger = get_logger("soma.learning.anomaly_detection")
 
@@ -14,66 +15,52 @@ class AnomalyDetection:
         self.historical_data = []
         self.lock = threading.Lock()
         
-        # Subscribe to relevant events
         bus.subscribe('metrics.collected', self.on_metrics_collected)
         bus.subscribe('predictions.made', self.on_predictions_made)
-        
-        # Initialize the anomaly detection model
-        self.initialize_model()
 
-    def initialize_model(self):
-        # Load historical data if available, otherwise start fresh
-        try:
-            with open(config.paths.soma + '/historical_data.npy', 'rb') as f:
-                self.historical_data = np.load(f).tolist()
-        except FileNotFoundError:
-            logger.info("No historical data found. Starting with an empty dataset.")
+        # Start a background thread to train the model periodically
+        def train_model():
+            while True:
+                with self.lock:
+                    if len(self.historical_data) > 100:  # Train only when there is enough data
+                        self.train_isolation_forest()
+                time.sleep(getattr(config.metrics, 'collection_interval_seconds', 5))
         
-        # Initialize the Isolation Forest model
-        self.model = IsolationForest(contamination=0.1, random_state=42)
-        if self.historical_data:
-            self.model.fit(np.array(self.historical_data))
+        thread = threading.Thread(target=train_model, daemon=True)
+        thread.start()
 
     def on_metrics_collected(self, event):
-        metrics = event.data
         with self.lock:
-            self.historical_data.append(metrics)
-            # Re-train the model periodically or when enough data is collected
-            if len(self.historical_data) % 100 == 0:
-                self.model.fit(np.array(self.historical_data))
-        
-        # Save historical data to disk
-        with open(config.paths.soma + '/historical_data.npy', 'wb') as f:
-            np.save(f, np.array(self.historical_data))
+            self.historical_data.append(event.data['value'])
+            if len(self.historical_data) > 1000:  # Limit the size of historical data
+                self.historical_data.pop(0)
 
     def on_predictions_made(self, event):
-        predictions = event.data
-        for prediction in predictions:
-            if self.detect_anomaly(prediction):
-                self.publish_anomaly_event(prediction)
-
-    def detect_anomaly(self, data_point):
-        # Predict anomalies using the model
-        prediction = self.model.predict([data_point])
-        return prediction == -1
-
-    def publish_anomaly_event(self, data_point):
-        anomaly_type = "Unknown"
-        severity_level = "High"  # Placeholder for actual severity calculation
-        affected_organ = "Unknown"  # Placeholder for actual organ identification
+        if self.model is None:
+            return
         
-        event_data = {
-            "type": anomaly_type,
-            "timestamp": time.time(),
-            "affected_organ": affected_organ,
-            "severity_level": severity_level,
-            "data_point": data_point
-        }
+        prediction = event.data['prediction']
+        anomaly_score = self.model.decision_function([[prediction]])[0]
         
-        bus.publish(Event(event_type="anomaly.detected", data=event_data))
-        logger.warning(f"Anomaly detected: {event_data}")
+        if anomaly_score < -0.5:  # Threshold for anomaly detection
+            bus.publish(Event(
+                event_type='anomaly.detected',
+                data={
+                    'type': 'Prediction Anomaly',
+                    'timestamp': time.time(),
+                    'affected_organ': 'soma.learning.predictive_model',
+                    'severity': 'High'
+                }
+            ))
+
+    def train_isolation_forest(self):
+        if len(self.historical_data) < 10:
+            return
+        
+        X = np.array(self.historical_data).reshape(-1, 1)
+        self.model = IsolationForest(contamination=0.1, random_state=42)
+        self.model.fit(X)
 
 # REQUIRED ENTRY POINT (zero required args)
 def start():
     organ = AnomalyDetection()
-    # No need for a background thread here as we are only subscribing to events
