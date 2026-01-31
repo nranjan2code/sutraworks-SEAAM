@@ -1,4 +1,29 @@
-# Python
+#============================================================================
+# SEAA .gitignore - Dual-Layer System Architecture
+#============================================================================
+#
+# This project has TWO persistent layers:
+#
+# 1. DEVELOPER LAYER (.git repository)
+#    - Kernel & infrastructure code (seaa/)
+#    - Core organs shipped with system (soma/)
+#    - Tests, documentation, configuration
+#    - Managed by developers via git
+#
+# 2. SYSTEM LAYER (DNA persistence)
+#    - dna.json: Current system state
+#    - .dna_backups/: System evolution history
+#    - .identity.json: Instance identity (survives resets)
+#    - events.log, memory_journal.json: Runtime logs
+#    - Runtime-generated organs (soma/generated/, soma/experimental/)
+#    - Managed by the system itself
+#
+# This strategy allows the system to evolve independently while keeping
+# developer-maintained code in version control.
+#
+#============================================================================
+
+# Python Development
 __pycache__/
 *.pyc
 *.pyo
@@ -8,35 +33,86 @@ env/
 venv/
 .env
 
-# MacOS
+# IDE & OS
 .DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 
-# SEAA Runtime Generation (Soma)
-# Core organs that ship with the system are tracked.
-# Runtime-evolved organs are ignored to prevent noise.
-#
-# Tracking core organs:
-#   soma/perception/
-#   soma/memory/
-#   soma/interface/
-#   soma/storage/
-#   soma/extensions/
-#   soma/learning/
-#
-# Ignoring runtime generated code:
-soma/generated/
-soma/experimental/
+#============================================================================
+# DEVELOPER LAYER (tracked in git)
+#============================================================================
 
-# Log files (generated at runtime)
-events.log
-memory_journal.json
+# Tracked:
+# seaa/          - Immutable kernel & infrastructure
+# soma/          - Core organs shipped with system
+# tests/         - Test suite
+# docs/          - Documentation
+# *.md           - Markdown files
+# config.yaml    - System configuration
+# setup.py, install.sh, requirements*.txt
 
-# Keep empty init files if needed, but the system creates folders.
-# We explicitly want to preserve the Kernel and Cortex.
-# seaa/kernel/ is tracked.
-# seaa/cortex/ is tracked.
-dna.json
-.identity.json
-.dna_backups/
+#============================================================================
+# SYSTEM LAYER (ignored - system manages this)
+#============================================================================
+
+# System State (DNA)
+dna.json                  # Current system state managed by SEAA
+dna.sha256               # DNA integrity hash
+.identity.json           # Instance identity (persists across resets)
+.dna_backups/           # System's evolution history
+
+# System Logs & Events
+events.log              # Event log (runtime-generated)
+memory_journal.json     # Memory/journal log (runtime-generated)
+
+# Runtime-Generated Organs
+# These are created by the system at runtime and should NOT be tracked
+soma/generated/         # Auto-generated organs
+soma/experimental/      # Experimental organs
+soma/*.log             # Organ-specific logs
+
+# System Internal Tracking (if system uses git for its own evolution)
+# Note: This is separate from the main .git repository
+.system_git/           # System's internal git repository (if used)
+.system_state/         # System's internal state directory (if used)
+
+#============================================================================
+# BUILD & TEST ARTIFACTS
+#============================================================================
+
 .pytest_cache/
 *.bak
+*.tmp
+dist/
+build/
+*.egg-info/
+.coverage
+htmlcov/
+
+#============================================================================
+# DEPLOYMENT & DOCKER
+#============================================================================
+
+.dockerignore
+*.log
+logs/
+data/
+
+#============================================================================
+# DEVELOPER NOTES
+#============================================================================
+
+# To modify this file:
+# 1. Core organs (soma/*): If adding new system organs, add to tracked files
+# 2. System state (dna.json): Always ignored - system manages this
+# 3. Runtime organs: soma/generated/ stays ignored for clean git history
+#
+# Git strategy:
+#   git add soma/perception/     (core organ)
+#   git add soma/learning/       (core organ)
+#   (never commit dna.json)      (system state)
+#   (never commit .identity.json) (system identity)
+#============================================================================
