@@ -12,8 +12,22 @@ venv/
 .DS_Store
 
 # SEAA Runtime Generation (Soma)
-# Evolved code is kept in the soma/ directory and ignored from version control.
-soma/
+# Core organs that ship with the system are tracked.
+# Runtime-evolved organs are ignored to prevent noise.
+#
+# Tracking core organs:
+#   soma/perception/
+#   soma/memory/
+#   soma/interface/
+#   soma/storage/
+#   soma/extensions/
+#   soma/learning/
+#
+# Ignoring runtime generated code:
+soma/generated/
+soma/experimental/
+
+# Log files (generated at runtime)
 events.log
 memory_journal.json
 

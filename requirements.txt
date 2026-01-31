@@ -1,3 +1,13 @@
-requests
-watchdog
-flask
+# SEAA Core Dependencies
+
+# Configuration and data validation
+pyyaml>=6.0
+pydantic>=2.0
+
+# File system monitoring
+watchdog>=3.0
+
+# Optional dependencies
+# Uncomment to use:
+# requests>=2.28.0
+# flask>=2.3.0
