@@ -13,81 +13,80 @@ logger = get_logger("soma.interface.web_api")
 app = FastAPI()
 app.mount("/frontend", StaticFiles(directory="frontend/dist"), name="static")
 
-# Thread-safe set to store WebSocket connections
-websocket_connections = set()
-
-# Queue for background sender thread
+websockets = set()
 event_queue = queue.Queue()
 
-class WebAPIServer:
-    def __init__(self):
-        # Subscribe to all EventBus events
-        bus.subscribe('*', self.on_event)
-        
-        # Start the background sender thread
-        threading.Thread(target=self.background_sender, daemon=True).start()
-    
-    async def on_event(self, event: Event):
-        # Append event to queue for sending to clients
-        event_queue.put(event)
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    return FileResponse("frontend/dist/index.html")
 
-    @app.websocket("/api/ws")
-    async def websocket_endpoint(websocket: WebSocket):
-        await websocket.accept()
-        websocket_connections.add(websocket)
-        
-        try:
-            while True:
-                data = await websocket.receive_text()
-                logger.info(f"Received message from client: {data}")
-        except Exception as e:
-            logger.error(f"WebSocket error: {e}")
-        finally:
-            websocket_connections.remove(websocket)
-
-    @app.get("/api/status", response_class=HTMLResponse)
-    async def status(request: Request):
-        return HTMLResponse(content="System Status: Online", status_code=200)
-
-    @app.get("/api/vitals")
-    async def vitals():
-        return {"vitals": "Good"}
-
-    @app.get("/api/organs")
-    async def organs():
-        return {"organs": []}
-
-    @app.get("/api/goals")
-    async def goals():
-        return {"goals": []}
-
-    @app.get("/api/timeline")
-    async def timeline():
-        return {"timeline": []}
-
-    @app.get("/api/failures")
-    async def failures():
-        return {"failures": []}
-
-    def background_sender(self):
+@app.websocket("/api/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    websockets.add(websocket)
+    try:
         while True:
-            try:
-                event = event_queue.get()
-                for websocket in list(websocket_connections):
-                    try:
-                        await websocket.send_json({"event_type": event.event_type, "data": event.data})
-                    except Exception as e:
-                        logger.error(f"Failed to send event to client: {e}")
-                        websocket_connections.remove(websocket)
-            except Exception as e:
-                logger.error(f"Error in background sender: {e}")
+            data = await websocket.receive_text()
+            # Handle incoming messages if needed
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+    finally:
+        websockets.remove(websocket)
 
-# REQUIRED ENTRY POINT (zero required args)
+def event_callback(event):
+    event_queue.put(event)
+
+def background_sender():
+    while True:
+        try:
+            event = event_queue.get(timeout=1)
+            for websocket in list(websockets):
+                await websocket.send_json({"type": event.event_type, "data": event.data})
+        except queue.Empty:
+            pass
+        except Exception as e:
+            logger.error(f"Background sender error: {e}")
+
+@app.get("/api/status")
+async def get_status():
+    return {"status": "running"}
+
+@app.get("/api/vitals")
+async def get_vitals():
+    # Implement logic to fetch vitals data
+    return {"vitals": "data"}
+
+@app.get("/api/organs")
+async def get_organs():
+    # Implement logic to fetch organs data
+    return {"organs": "data"}
+
+@app.get("/api/goals")
+async def get_goals():
+    # Implement logic to fetch goals data
+    return {"goals": "data"}
+
+@app.get("/api/timeline")
+async def get_timeline():
+    # Implement logic to fetch timeline data
+    return {"timeline": "data"}
+
+@app.get("/api/failures")
+async def get_failures():
+    # Implement logic to fetch failures data
+    return {"failures": "data"}
+
 def start():
-    organ = WebAPIServer()
+    bus.subscribe('*', event_callback)
+    
+    sender_thread = threading.Thread(target=background_sender, daemon=True)
+    sender_thread.start()
+    
+    host = getattr(config.api, 'host', '0.0.0.0')
+    port = getattr(config.api, 'port', 8000)
     
     def run_server():
-        uvicorn.run(app, host=config.api.host, port=config.api.port, workers=config.api.workers)
+        uvicorn.run(app, host=host, port=port)
     
-    thread = threading.Thread(target=run_server, daemon=True)
-    thread.start()
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
