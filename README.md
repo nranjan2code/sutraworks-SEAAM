@@ -99,28 +99,43 @@ See [docs/guides/INSTALL.md](docs/guides/INSTALL.md) for detailed setup.
 
 ## 🚀 Quick Start
 
-### Start the Agent
+### Using Management Script (Recommended)
+The easiest way to start, manage, and monitor SEAA:
+
 ```bash
-python3 main.py
+# Start the system (launches everything: API, web, evolution)
+./manage.sh start
+
+# Check status
+./manage.sh status
+
+# View logs
+./manage.sh logs -f
+
+# Stop when done
+./manage.sh stop
 ```
 
-### Interactive Mode (Rich UI + REPL)
+See [MANAGEMENT.md](MANAGEMENT.md) for full management script guide.
+
+### Or Start Directly
 ```bash
-python3 main.py -i
+python3 main.py                     # Start system (auto-launches API & web)
+python3 main.py -i                  # Interactive REPL mode
 ```
 
-### Common Commands
+### Common Operations
 ```bash
-python3 main.py status              # System health
-python3 main.py organs              # List organs with health
-python3 main.py identity --name X   # Set instance name
-python3 main.py watch               # Live event stream
-python3 main.py goals               # Goal satisfaction progress
-python3 main.py failures            # Failure records
-python3 main.py --reset             # Reset to tabula rasa (keeps identity!)
+./manage.sh health              # Detailed system health
+./manage.sh organs              # List organs with status
+./manage.sh watch               # Live event stream
+./manage.sh goals               # Goal satisfaction progress
+./manage.sh failures            # Failure records
+./manage.sh restart             # Restart the system
+./manage.sh reset               # Reset (keeps instance identity)
 ```
 
-Full command reference: See [docs/guides/QUICK_START.md](docs/guides/QUICK_START.md)
+Full command reference: See [MANAGEMENT.md](MANAGEMENT.md) and [docs/guides/QUICK_START.md](docs/guides/QUICK_START.md)
 
 ---
 
