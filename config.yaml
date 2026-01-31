@@ -69,3 +69,27 @@ remote_logging:
   flush_interval_seconds: 10
   # Security: Only send these log levels
   min_level: "WARNING"  # Only WARNING and ERROR
+
+# API Server Configuration (for soma.interface.web_api)
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8000"
+  request_timeout_seconds: 30
+  websocket_timeout_seconds: 300
+
+# Database Configuration (for soma.storage.sqlite)
+database:
+  engine: "sqlite"  # or "postgres" in future
+  url: "data/seaa.db"
+  pool_size: 5
+  echo: false  # Set to true for SQL debugging
+
+# Metrics Configuration (for soma.extensions.metrics)
+metrics:
+  enabled: true
+  retention_days: 30
+  collection_interval_seconds: 5

@@ -2,63 +2,162 @@
   "system_version": "1.0.0",
   "system_name": "SEAA-TabulaRasa",
   "blueprint": {
-    "soma.perception.observer": {
-      "name": "soma.perception.observer",
-      "description": "This organ will be responsible for scanning and analyzing the file system. It will periodically check for changes, identify new or modified files, and publish events containing information about these changes to the event bus. The observer will use Python's built-in libraries such as `os` and `watchdog` to monitor directories and files. When a change is detected, it will create an event with details like file path, type of change (created, modified, deleted), and time stamp, and publish this event using the Event Bus API.",
+    "soma.perception.file_system_observer": {
+      "name": "soma.perception.file_system_observer",
+      "description": "This organ will be responsible for monitoring and reporting changes in the file system. It will use platform-specific APIs to detect file creation, deletion, modification, and movement events. The organ will publish these events to the event bus with appropriate metadata such as file path, type of change, and timestamp.",
       "dependencies": [],
       "version": 1,
-      "created_at": "2026-01-30T05:22:40.905490Z",
-      "updated_at": "2026-01-30T05:22:40.905503Z"
+      "created_at": "2026-01-31T06:17:13.392788Z",
+      "updated_at": "2026-01-31T06:17:13.392798Z"
     },
     "soma.memory.journal": {
       "name": "soma.memory.journal",
-      "description": "This organ will be responsible for maintaining a persistent memory of file system events. It will subscribe to events published by the 'soma.perception.observer' and store relevant information about each event in a structured format, such as a database or log file. The journal will ensure that all changes detected by the observer are recorded, allowing the system to have a historical view of the file system state. This organ will use Python's built-in libraries for logging and configuration management to handle data persistence and retrieval.",
+      "description": "This organ will be responsible for maintaining a persistent record of all events received from the event bus. It will subscribe to relevant events, such as file system changes reported by the 'soma.perception.file_system_observer', and store this information in a structured format like JSON or a database. The journal will ensure that all historical data is preserved and can be queried for analysis or auditing purposes.",
       "dependencies": [],
       "version": 1,
-      "created_at": "2026-01-30T05:23:33.166499Z",
-      "updated_at": "2026-01-30T05:23:33.166514Z"
+      "created_at": "2026-01-31T06:18:05.728008Z",
+      "updated_at": "2026-01-31T06:18:05.728012Z"
     },
-    "soma.visualization.dashboard": {
-      "name": "soma.visualization.dashboard",
-      "description": "This organ will be responsible for providing a visual dashboard that displays real-time and historical data about the file system changes. It will subscribe to events published by the 'soma.memory.journal' and use this information to update the dashboard in real-time. The dashboard will provide an interface where users can view file paths, types of changes, timestamps, and other relevant metrics. This organ will utilize Python's web framework libraries such as Flask or Django to create a RESTful API that serves the dashboard frontend. The frontend can be built using HTML/CSS/JavaScript frameworks like React or Angular to provide a dynamic and interactive user experience.",
+    "soma.interface.web_api": {
+      "name": "soma.interface.web_api",
+      "description": "This organ will provide a REST API and WebSocket server for the SEAA system using FastAPI. It will use threading and uvicorn.run() to start in a background thread without blocking. The organ will accept WebSocket connections at /api/ws, subscribe to all EventBus events with a synchronous callback that appends to a queue, and have a background sender thread that drains the queue and sends to all connected clients. The API will serve static frontend files from frontend/dist and provide REST endpoints: GET /api/status, /api/vitals, /api/organs, /api/goals, /api/timeline, /api/failures. It will ensure that EventBus callbacks are synchronous by using a thread-safe set to store WebSocket connections and a background thread queue for sending events to clients. Additionally, it will handle the 'await' issue in web_api.py by ensuring all asynchronous operations are properly awaited within async functions.",
+      "dependencies": [],
+      "version": 12,
+      "created_at": "2026-01-31T06:33:06.263669Z",
+      "updated_at": "2026-01-31T07:31:52.833287Z"
+    },
+    "soma.storage.sqlite": {
+      "name": "soma.storage.sqlite",
+      "description": "This organ will provide persistent storage for system events using SQLite. It will subscribe to all events on the EventBus and persist them to a SQLite database for historical analysis and auditing. The database file path should come from config.database.url. The organ should create necessary tables (events, organs, goals) automatically on startup. It should expose methods to query historical events, filter by type, time range, organ name, and other metadata. The database should be thread-safe with connection pooling. Configuration: database.engine='sqlite', database.url='data/seaa.db', database.pool_size=5.",
+      "dependencies": [],
+      "version": 2,
+      "created_at": "2026-01-31T08:00:00.000000Z",
+      "updated_at": "2026-01-31T07:05:18.453240Z"
+    },
+    "soma.extensions.metrics": {
+      "name": "soma.extensions.metrics",
+      "description": "This organ will collect and expose system metrics including CPU usage, memory consumption, event throughput, organ health scores, and response times. It will subscribe to all events and calculate real-time metrics. It will publish 'metrics.collected' events at regular intervals (from config.metrics.collection_interval_seconds). Metrics should be stored in memory with configurable retention policy (config.metrics.retention_days). The organ should track: total_events, events_per_minute, active_organs_count, failed_organs_count, average_event_latency, organ-specific health scores. Configuration: metrics.enabled=true, metrics.retention_days=30, metrics.collection_interval_seconds=5.",
       "dependencies": [],
       "version": 1,
-      "created_at": "2026-01-30T05:24:20.083886Z",
-      "updated_at": "2026-01-30T05:24:20.083901Z"
+      "created_at": "2026-01-31T08:00:00.000000Z",
+      "updated_at": "2026-01-31T08:00:00.000000Z"
+    },
+    "soma.learning.predictive_model": {
+      "name": "soma.learning.predictive_model",
+      "description": "This organ will be responsible for analyzing historical data from the 'soma.memory.journal' and training predictive models. It will subscribe to relevant events, such as file system changes and metrics collected by other organs. The organ will use machine learning algorithms to identify patterns and predict future changes in the environment. Predictions will be published to the event bus with appropriate metadata, including predicted change type, timestamp, and confidence score. The organ will also expose an API endpoint through 'soma.interface.web_api' to query predictions and their accuracy metrics.",
+      "dependencies": [],
+      "version": 1,
+      "created_at": "2026-01-31T06:46:17.233075Z",
+      "updated_at": "2026-01-31T06:46:17.233079Z"
+    },
+    "soma.learning.user_interaction_analyzer": {
+      "name": "soma.learning.user_interaction_analyzer",
+      "description": "This organ will be responsible for analyzing user interactions with the system's predictions and providing feedback to improve model accuracy over time. It will subscribe to events related to user actions, such as clicks or API requests that indicate user satisfaction or dissatisfaction with a prediction. The organ will aggregate this feedback and use it to retrain and refine the predictive models managed by 'soma.learning.predictive_model'. Feedback data will include timestamps, user identifiers (if applicable), interaction types, and outcomes. This organ will ensure that user insights are continuously fed back into the system's learning loop to enhance prediction accuracy.",
+      "dependencies": [],
+      "version": 1,
+      "created_at": "2026-01-31T07:14:23.841591Z",
+      "updated_at": "2026-01-31T07:14:23.841614Z"
+    },
+    "soma.learning.recommendation_system": {
+      "name": "soma.learning.recommendation_system",
+      "description": "This organ will integrate an AI-driven recommendation system that suggests actions or configurations based on the predictive models and user feedback, enhancing the system's autonomy. It will subscribe to predictions from 'soma.learning.predictive_model' and user interaction feedback from 'soma.learning.user_interaction_analyzer'. The organ will analyze these inputs to generate actionable recommendations, which will be published to the event bus with appropriate metadata such as recommendation type, target resource, suggested action, confidence score, and timestamp. Additionally, it will provide an API endpoint through 'soma.interface.web_api' to query current recommendations and their rationale.",
+      "dependencies": [],
+      "version": 1,
+      "created_at": "2026-01-31T07:28:55.362284Z",
+      "updated_at": "2026-01-31T07:28:55.362307Z"
     }
   },
   "goals": [
     {
       "description": "I must be able to perceive the file system.",
       "priority": 1,
-      "satisfied": false,
-      "created_at": "2026-01-30T05:22:12.860331Z",
-      "required_organs": []
+      "satisfied": true,
+      "created_at": "2026-01-31T06:16:51.277809Z",
+      "required_organs": [
+        "soma.perception.*"
+      ]
     },
     {
       "description": "I must have a memory.",
       "priority": 1,
+      "satisfied": true,
+      "created_at": "2026-01-31T06:16:51.278099Z",
+      "required_organs": [
+        "soma.memory.*"
+      ]
+    },
+    {
+      "description": "I must be observable.",
+      "priority": 2,
+      "satisfied": true,
+      "created_at": "2026-01-31T06:16:51.278101Z",
+      "required_organs": [
+        "soma.interface.*"
+      ]
+    },
+    {
+      "description": "The system should develop the ability to learn from past events and make predictions about future changes in the environment.",
+      "priority": 1,
       "satisfied": false,
-      "created_at": "2026-01-30T05:22:12.860565Z",
+      "created_at": "2026-01-31T06:34:27.513206Z",
       "required_organs": []
     },
     {
-      "description": "I must have a visual dashboard.",
-      "priority": 2,
+      "description": "Optional: Add the ability to analyze user interactions with the system's predictions and provide feedback to improve model accuracy over time.",
+      "priority": 1,
       "satisfied": false,
-      "created_at": "2026-01-30T05:22:12.860568Z",
+      "created_at": "2026-01-31T07:12:58.162629Z",
+      "required_organs": []
+    },
+    {
+      "description": "Integrate an AI-driven recommendation system that suggests actions or configurations based on the predictive models and user feedback, enhancing the system's autonomy.",
+      "priority": 1,
+      "satisfied": false,
+      "created_at": "2026-01-31T07:20:26.579673Z",
+      "required_organs": []
+    },
+    {
+      "description": "Optional: Add an AI-driven recommendation system that suggests actions or configurations based on the predictive models and user feedback, enhancing the system's autonomy.",
+      "priority": 1,
+      "satisfied": false,
+      "created_at": "2026-01-31T07:24:44.262961Z",
       "required_organs": []
     }
   ],
   "active_modules": [
-    "soma.perception.observer",
-    "soma.memory.journal"
+    "soma.perception.file_system_observer",
+    "soma.memory.journal",
+    "soma.extensions.metrics",
+    "soma.learning.predictive_model",
+    "soma.storage.sqlite",
+    "soma.learning.user_interaction_analyzer"
   ],
-  "failures": [],
+  "failures": [
+    {
+      "module_name": "soma.learning.recommendation_system",
+      "error_type": "runtime",
+      "error_message": "name 'List' is not defined",
+      "timestamp": "2026-01-31T07:30:24.132830Z",
+      "attempt_count": 1,
+      "context": {},
+      "circuit_open": false,
+      "circuit_opened_at": null
+    },
+    {
+      "module_name": "soma.interface.web_api",
+      "error_type": "runtime",
+      "error_message": "'await' outside async function (web_api.py, line 40)",
+      "timestamp": "2026-01-31T07:33:12.955486Z",
+      "attempt_count": 1,
+      "context": {},
+      "circuit_open": false,
+      "circuit_opened_at": null
+    }
+  ],
   "metadata": {
-    "last_modified": "2026-01-30T05:24:20.085459Z",
-    "total_evolutions": 2,
-    "total_failures": 0,
-    "last_successful_organ": "soma.memory.journal"
+    "last_modified": "2026-01-31T07:33:12.955999Z",
+    "total_evolutions": 21,
+    "total_failures": 15,
+    "last_successful_organ": "soma.interface.web_api"
   }
 }

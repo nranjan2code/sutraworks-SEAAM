@@ -128,6 +128,37 @@ class RemoteLoggingConfig:
 
 
 @dataclass
+class APIConfig:
+    """API server configuration (for soma.interface.web_api)."""
+    host: str = "0.0.0.0"
+    port: int = 8000
+    workers: int = 4
+    cors_origins: List[str] = field(default_factory=lambda: [
+        "http://localhost:3000",
+        "http://localhost:8000",
+    ])
+    request_timeout_seconds: int = 30
+    websocket_timeout_seconds: int = 300
+
+
+@dataclass
+class DatabaseConfig:
+    """Database configuration (for soma.storage.sqlite)."""
+    engine: str = "sqlite"  # "sqlite", "postgres", etc.
+    url: str = "data/seaa.db"
+    pool_size: int = 5
+    echo: bool = False
+
+
+@dataclass
+class MetricsConfig:
+    """Metrics collection configuration (for soma.extensions.metrics)."""
+    enabled: bool = True
+    retention_days: int = 30
+    collection_interval_seconds: int = 5
+
+
+@dataclass
 class SEAAConfig:
     """Root configuration object."""
     llm: LLMConfig = field(default_factory=LLMConfig)
@@ -139,7 +170,9 @@ class SEAAConfig:
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     event_bus: EventBusConfig = field(default_factory=EventBusConfig)
     remote_logging: RemoteLoggingConfig = field(default_factory=RemoteLoggingConfig)
-    circuit_breaker: CircuitBreakerConfig = field(default_factory=CircuitBreakerConfig)
+    api: APIConfig = field(default_factory=APIConfig)
+    database: DatabaseConfig = field(default_factory=DatabaseConfig)
+    metrics: MetricsConfig = field(default_factory=MetricsConfig)
     
     # Metadata
     version: str = "1.0.0"
@@ -200,6 +233,21 @@ class SEAAConfig:
             for key, value in data["remote_logging"].items():
                 if hasattr(config.remote_logging, key):
                     setattr(config.remote_logging, key, value)
+
+        if "api" in data:
+            for key, value in data["api"].items():
+                if hasattr(config.api, key):
+                    setattr(config.api, key, value)
+
+        if "database" in data:
+            for key, value in data["database"].items():
+                if hasattr(config.database, key):
+                    setattr(config.database, key, value)
+
+        if "metrics" in data:
+            for key, value in data["metrics"].items():
+                if hasattr(config.metrics, key):
+                    setattr(config.metrics, key, value)
 
         if "version" in data:
             config.version = data["version"]

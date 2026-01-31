@@ -1,0 +1,82 @@
+.status-card {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid #0f3460;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #0f3460;
+  padding-bottom: 16px;
+}
+
+.instance-name {
+  margin: 0;
+  font-size: 28px;
+  font-weight: bold;
+  color: #00d4ff;
+  letter-spacing: 0.5px;
+}
+
+.health-badge {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+.status-healthy {
+  background-color: #00c851;
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(0, 200, 81, 0.5);
+}
+
+.status-degraded {
+  background-color: #ffb300;
+  color: #1a1a2e;
+  box-shadow: 0 0 20px rgba(255, 179, 0, 0.5);
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.status-item label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #a0a0b0;
+  font-weight: 600;
+}
+
+.status-item span,
+.status-item code {
+  font-size: 16px;
+  font-weight: 500;
+  color: #00d4ff;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.status-item code {
+  background: rgba(0, 212, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  word-break: break-all;
+}

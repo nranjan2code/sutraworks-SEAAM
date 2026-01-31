@@ -1,0 +1,148 @@
+.organ-list {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid #0f3460;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.organ-list h2 {
+  margin: 0 0 16px 0;
+  color: #00d4ff;
+  font-size: 20px;
+  font-weight: 600;
+  border-bottom: 2px solid #0f3460;
+  padding-bottom: 12px;
+}
+
+.organ-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.organ-table thead {
+  background-color: rgba(15, 52, 96, 0.5);
+}
+
+.organ-table th {
+  padding: 12px;
+  text-align: left;
+  color: #a0a0b0;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #0f3460;
+}
+
+.organ-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(15, 52, 96, 0.3);
+  color: #e0e0e0;
+}
+
+.organ-row {
+  transition: background-color 0.2s ease;
+}
+
+.organ-row:hover {
+  background-color: rgba(0, 212, 255, 0.05);
+}
+
+.organ-row.organ-healthy {
+  border-left: 3px solid #00c851;
+}
+
+.organ-row.organ-degraded {
+  border-left: 3px solid #ffb300;
+}
+
+.organ-row.organ-dead {
+  border-left: 3px solid #ff4444;
+  opacity: 0.7;
+}
+
+.organ-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  color: #00d4ff;
+  font-weight: 500;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.status-active {
+  background-color: #00c851;
+  box-shadow: 0 0 8px rgba(0, 200, 81, 0.5);
+}
+
+.status-dot.status-pending {
+  background-color: #ffb300;
+  box-shadow: 0 0 8px rgba(255, 179, 0, 0.5);
+}
+
+.status-dot.status-failed {
+  background-color: #ff4444;
+  box-shadow: 0 0 8px rgba(255, 68, 68, 0.5);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.organ-status {
+  text-transform: capitalize;
+  color: #a0a0b0;
+}
+
+.organ-health {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.organ-health.health-healthy {
+  color: #00c851;
+}
+
+.organ-health.health-degraded {
+  color: #ffb300;
+}
+
+.organ-health.health-dead {
+  color: #ff4444;
+}
+
+.organ-version {
+  color: #a0a0b0;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+}
+
+.organ-created {
+  color: #808080;
+  font-size: 12px;
+}
+
+.loading,
+.empty-state {
+  text-align: center;
+  padding: 24px;
+  color: #a0a0b0;
+  font-style: italic;
+}

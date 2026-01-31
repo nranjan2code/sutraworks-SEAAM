@@ -30,6 +30,56 @@ template: |
     * `bus.subscribe(event_type: str, callback: Callable[[Event], None])`
     * `bus.publish(Event(event_type: str, data: Any))`
 
+  - Configuration Access: `from seaa.core.config import config`
+    * Use attribute access ONLY: `config.llm.model`, `config.paths.soma`, etc.
+    * NEVER use dict-like `.get()` method - the config is a dataclass, not a dict
+    * For sensible defaults, use Python's `getattr()`: `getattr(config, 'attr', default_value)`
+    * Available config sections (verify these exist via getattr before using):
+      - `config.llm` (provider, model, temperature)
+      - `config.paths` (soma, dna)
+      - `config.metabolism` (cycle_interval_seconds, max_organs_per_cycle)
+      - `config.security` (allow_pip_install, allowed_pip_packages)
+      - `config.logging` (level, format, min_level)
+      - `config.api` (host, port, workers, cors_origins, request_timeout_seconds, websocket_timeout_seconds)
+      - `config.database` (engine, url, pool_size, echo)
+      - `config.metrics` (enabled, retention_days, collection_interval_seconds)
+      - `config.observability` (beacon_port, enable_live_events)
+    * For optional sections, ALWAYS use: `getattr(config, 'section_name', {})` or check hasattr first
+
+  - Service Organs (Interface/Extensions): Non-Blocking Pattern
+    * If this is a service that needs to run continuously (like a web server):
+      - DO NOT use `server.run()` directly - this blocks the start() function
+      - INSTEAD: Start the service in a background thread and RETURN immediately
+      - Example for FastAPI:
+        ```python
+        import threading
+        app = FastAPI()
+
+        def start():
+            # Add routes, middleware, etc. to app
+            def run_server():
+                import uvicorn
+                uvicorn.run(app, host="0.0.0.0", port=8000)
+            thread = threading.Thread(target=run_server, daemon=True)
+            thread.start()
+            # CRITICAL: Return immediately, don't block
+        ```
+      - The EventBus will keep the system alive, the thread stays running
+      - Subscribe to events BEFORE starting the server thread
+    * If this is a periodic collection organ (like metrics):
+      - Use a background loop with time.sleep()
+      - EXAMPLE:
+        ```python
+        def start():
+            def collect_metrics():
+                while True:
+                    # Collect metrics
+                    bus.publish(Event(event_type="metrics.collected", data={...}))
+                    time.sleep(getattr(config.metrics, 'collection_interval_seconds', 5))
+            thread = threading.Thread(target=collect_metrics, daemon=True)
+            thread.start()
+        ```
+
   - Purpose: Implement the organ logic under the provided `{{ module_name }}` path.
 
   DECOUPLING RULES:
@@ -54,12 +104,15 @@ template: |
   EXAMPLE FORMAT:
   from seaa.kernel.bus import bus, Event
   from seaa.core.logging import get_logger
+  from seaa.core.config import config
 
   logger = get_logger("my_organ")
 
   class MyOrgan:
       def __init__(self):
           bus.subscribe('some.event', self.on_event)
+          # Access config using attribute access:
+          self.timeout = getattr(config, 'timeout_seconds', 30)
 
       def on_event(self, event):
           logger.info(f"Received: {event.data}")
