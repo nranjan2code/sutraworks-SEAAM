@@ -25,6 +25,16 @@ Step-by-step guides to install and use SEAA.
 - How to navigate docs
 - How to get help
 
+### [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+**Problem solving guide**
+- System stuck on shutdown
+- Ollama connection issues
+- Port already in use
+- Organ failures
+- DNA corruption
+- Installation issues
+- Quick command reference
+
 ## Installation Options
 
 ### For Users

@@ -390,7 +390,8 @@ Robinson (550e8400-e29b-41d4-a716-446655440000)
 ## 🔗 Community & Support
 
 - **Documentation**: [docs/README.md](docs/README.md)
-- **Installation Help**: [docs/guides/INSTALL.md](docs/guides/INSTALL.md#troubleshooting)
+- **Installation Help**: [docs/guides/INSTALL.md](docs/guides/INSTALL.md)
+- **Troubleshooting**: [docs/guides/TROUBLESHOOTING.md](docs/guides/TROUBLESHOOTING.md)
 - **Report Issues**: [GitHub Issues](https://github.com/nranjan2code/sutraworks-SEAAM/issues)
 - **Contribute**: [docs/internal/CLAUDE.md](docs/internal/CLAUDE.md)
 
