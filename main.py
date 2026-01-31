@@ -467,6 +467,19 @@ def run_agent():
     logger = get_logger("main")
 
     try:
+        # Start the web API immediately (before genesis awakening)
+        try:
+            import sys
+            sys.path.insert(0, str(Path(__file__).parent))
+            from soma.interface.web_api import start as start_web_api
+            import threading
+            web_api_thread = threading.Thread(target=start_web_api, daemon=False)
+            web_api_thread.start()
+            logger.info("Web API started in background thread")
+        except Exception as e:
+            logger.warning(f"Failed to start Web API: {e}", exc_info=True)
+
+        # Now start the genesis system
         genesis = Genesis()
         genesis.awaken()
     except KeyboardInterrupt:

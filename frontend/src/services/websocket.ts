@@ -18,7 +18,7 @@ class WebSocketClient {
   private connectionHandlers: Set<ConnectionHandler> = new Set()
   private reconnectTimeout: NodeJS.Timeout | null = null
 
-  constructor(url: string = `ws://${window.location.host}/ws/events`) {
+  constructor(url: string = `ws://${window.location.host}/api/ws`) {
     this.url = url
   }
 
