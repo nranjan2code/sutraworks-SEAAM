@@ -33,6 +33,12 @@ genealogy:
   user_name: "SEAA Genesis"
   user_email: "genesis@seaa.internal"
 
+event_bus:
+  # Number of events to retain for debugging
+  # 0 = no retention (streaming only)
+  # > 0 = keep last N events in memory
+  max_retained_events: 100
+
 security:
   # IMPORTANT: Disabled by default for security
   # Set to true only if you trust the LLM output
@@ -48,3 +54,18 @@ logging:
   level: DEBUG
   format: colored  # 'colored' for dev, 'json' for production
   # file: ./logs/seaa.log  # Uncomment to enable file logging
+
+remote_logging:
+  # Remote logging configuration (for centralized monitoring)
+  enabled: false
+  # URL to send logs to (must support POST with JSON)
+  # Example: "http://logging-service:5000/logs" or "https://example.com/api/logs"
+  url: ""
+  # API key (optional, added as "Authorization: Bearer {api_key}" header)
+  api_key: ""
+  # Buffer size before sending batch
+  batch_size: 50
+  # Send interval in seconds
+  flush_interval_seconds: 10
+  # Security: Only send these log levels
+  min_level: "WARNING"  # Only WARNING and ERROR

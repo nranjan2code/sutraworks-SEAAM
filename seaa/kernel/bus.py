@@ -18,13 +18,15 @@ import asyncio
 import threading
 import queue
 import time
+import collections
 from datetime import datetime
-from typing import Callable, Any, Optional
+from typing import Callable, Any, Optional, List
 from uuid import uuid4
 from dataclasses import dataclass, field
 from enum import Enum
 
 from seaa.core.logging import get_logger
+from seaa.core.config import config
 
 logger = get_logger("bus")
 
@@ -106,16 +108,21 @@ class EventBus:
     def __init__(self):
         if self._initialized:
             return
-        
+
         self._subscribers: dict[str, list[Callable[[Event], None]]] = {}
         self._async_subscribers: dict[str, list[Callable[[Event], Any]]] = {}
         self._queue: queue.Queue = queue.Queue(maxsize=1000)  # Backpressure
         self._running = False
         self._worker_thread: Optional[threading.Thread] = None
         self._sub_lock = threading.RLock()
-        
+
+        # Event retention (for debugging long-running systems)
+        max_retained = getattr(config.event_bus, 'max_retained_events', 100)
+        self._retained_events: collections.deque = collections.deque(maxlen=max_retained)
+        self._retention_enabled = max_retained > 0
+
         self._initialized = True
-        logger.debug("EventBus initialized")
+        logger.debug(f"EventBus initialized (retention: {max_retained} events)")
     
     def subscribe(
         self,
@@ -150,19 +157,23 @@ class EventBus:
     def publish(self, event: Event) -> None:
         """
         Publish an event synchronously.
-        
+
         Callbacks are invoked in the calling thread, one at a time.
         Exceptions in callbacks are caught and logged.
         """
+        # Retain event for debugging (if enabled)
+        if self._retention_enabled:
+            self._retained_events.append(event)
+
         with self._sub_lock:
             listeners = list(self._subscribers.get(event.event_type, []))
-        
+
         if not listeners:
             logger.debug(f"No listeners for event: {event.event_type}")
             return
-        
+
         logger.debug(f"Publishing: {event.event_type} -> {len(listeners)} listeners")
-        
+
         for callback in listeners:
             try:
                 callback(event)
@@ -244,7 +255,32 @@ class EventBus:
     def get_queue_size(self) -> int:
         """Get current size of the async event queue."""
         return self._queue.qsize()
-    
+
+    def get_retained_events(self, count: Optional[int] = None, event_type: Optional[str] = None) -> List[Event]:
+        """
+        Get recent retained events.
+
+        Args:
+            count: Maximum number of events to return (default: all)
+            event_type: Filter by event type (default: all types)
+
+        Returns:
+            List of recent events, most recent last
+        """
+        events = list(self._retained_events)
+
+        if event_type:
+            events = [e for e in events if e.event_type == event_type]
+
+        if count:
+            events = events[-count:]
+
+        return events
+
+    def get_retained_count(self) -> int:
+        """Get number of retained events."""
+        return len(self._retained_events)
+
     def clear_subscribers(self, event_type: Optional[str] = None) -> None:
         """
         Clear all subscribers (for testing or reset).

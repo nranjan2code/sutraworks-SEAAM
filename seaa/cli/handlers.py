@@ -10,6 +10,8 @@ from typing import Optional, List, TYPE_CHECKING
 from rich.console import Console
 
 from seaa.core.logging import get_logger
+from seaa.kernel.observer import get_observer
+from seaa.kernel.identity import get_identity
 
 if TYPE_CHECKING:
     from seaa.cli.runtime import GenesisRuntime
@@ -160,7 +162,7 @@ def cmd_identity(ctx: Optional[CommandContext] = None) -> None:
     """Show or set instance identity."""
     ctx = ctx or get_context()
 
-    from seaa.kernel.identity import get_identity, set_name
+    from seaa.kernel.identity import set_name
     from seaa.cli.ui.panels import render_identity
 
     # Check if setting name

@@ -110,14 +110,35 @@ class GenealogyConfig:
 
 
 @dataclass
+class EventBusConfig:
+    """Event bus configuration."""
+    # Number of events to retain in memory for debugging
+    max_retained_events: int = 100
+
+
+@dataclass
+class RemoteLoggingConfig:
+    """Remote logging configuration."""
+    enabled: bool = False
+    url: str = ""
+    api_key: Optional[str] = None
+    batch_size: int = 50
+    flush_interval_seconds: int = 10
+    min_level: str = "WARNING"
+
+
+@dataclass
 class SEAAConfig:
     """Root configuration object."""
     llm: LLMConfig = field(default_factory=LLMConfig)
     paths: PathsConfig = field(default_factory=PathsConfig)
     metabolism: MetabolismConfig = field(default_factory=MetabolismConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
+    circuit_breaker: CircuitBreakerConfig = field(default_factory=CircuitBreakerConfig)
     genealogy: GenealogyConfig = field(default_factory=GenealogyConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    event_bus: EventBusConfig = field(default_factory=EventBusConfig)
+    remote_logging: RemoteLoggingConfig = field(default_factory=RemoteLoggingConfig)
     circuit_breaker: CircuitBreakerConfig = field(default_factory=CircuitBreakerConfig)
     
     # Metadata
@@ -169,6 +190,16 @@ class SEAAConfig:
             for key, value in data["circuit_breaker"].items():
                 if hasattr(config.circuit_breaker, key):
                     setattr(config.circuit_breaker, key, value)
+
+        if "event_bus" in data:
+            for key, value in data["event_bus"].items():
+                if hasattr(config.event_bus, key):
+                    setattr(config.event_bus, key, value)
+
+        if "remote_logging" in data:
+            for key, value in data["remote_logging"].items():
+                if hasattr(config.remote_logging, key):
+                    setattr(config.remote_logging, key, value)
 
         if "version" in data:
             config.version = data["version"]

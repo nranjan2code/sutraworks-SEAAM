@@ -15,6 +15,7 @@ This module focuses purely on orchestration.
 import os
 import sys
 import signal
+import threading
 import time
 from pathlib import Path
 from typing import Callable, Optional, Union
@@ -114,11 +115,21 @@ class Genesis:
         logger.info(f"Genesis initialized: {self.dna.system_name} v{self.dna.system_version}")
     
     def _setup_signal_handlers(self) -> None:
-        """Setup graceful shutdown handlers."""
+        """Setup graceful shutdown handlers.
+
+        Note: Signal handlers can only be registered in the main thread.
+        When Genesis runs in a background thread (e.g., interactive CLI),
+        we skip signal registration - shutdown is handled by the runtime.
+        """
+        # Signal handlers can only be set from main thread
+        if threading.current_thread() is not threading.main_thread():
+            logger.debug("Running in background thread, skipping signal handlers")
+            return
+
         def shutdown_handler(signum, frame):
             logger.info(f"Received signal {signum}, initiating graceful shutdown...")
             self._running = False
-        
+
         signal.signal(signal.SIGINT, shutdown_handler)
         signal.signal(signal.SIGTERM, shutdown_handler)
     
@@ -154,34 +165,80 @@ class Genesis:
     def _evolution_cycle(self, max_iterations: int = 10) -> int:
         """
         Run evolution until no more blueprints are pending.
-        
+
         Args:
             max_iterations: Safety limit to prevent infinite loops
-        
+
         Returns:
             Number of organs evolved
         """
         evolved_count = 0
-        
+
         for iteration in range(max_iterations):
             # Ask Architect to reflect
             self.architect.reflect()
-            
+
             # Check for pending blueprints
             pending = self.dna.get_pending_blueprints()
             if not pending:
                 logger.info(f"Evolution complete: {evolved_count} organs grown")
                 break
-            
-            # Build pending organs (limited per cycle)
-            organs_this_cycle = list(pending.items())[:config.metabolism.max_organs_per_cycle]
-            
+
+            # Build pending organs (filter by dependencies, limited per cycle)
+            organs_this_cycle = self._get_buildable_organs(pending)
+            organs_this_cycle = organs_this_cycle[:config.metabolism.max_organs_per_cycle]
+
+            if not organs_this_cycle and pending:
+                # Pending organs exist but have unsatisfied dependencies
+                logger.warning(f"Waiting for dependencies: {list(pending.keys())}")
+                break
+
             for organ_name, blueprint in organs_this_cycle:
                 if self._evolve_organ(organ_name, blueprint):
                     evolved_count += 1
-        
+
         return evolved_count
     
+    def _get_buildable_organs(self, pending: dict) -> list:
+        """
+        Filter pending organs to only those with satisfied dependencies.
+
+        Args:
+            pending: Dictionary of pending blueprints
+
+        Returns:
+            List of (organ_name, blueprint) tuples that can be built now
+        """
+        buildable = []
+        active_modules = set(self.dna.active_modules)
+
+        for organ_name, blueprint in pending.items():
+            # Check if dependencies are satisfied
+            if not blueprint.dependencies:
+                # No dependencies, always buildable
+                buildable.append((organ_name, blueprint))
+                continue
+
+            # Check each dependency
+            all_satisfied = True
+            for dep in blueprint.dependencies:
+                # Support wildcard patterns (e.g., "soma.perception.*")
+                if "*" in dep:
+                    pattern = dep.replace("*", "")
+                    satisfied = any(mod.startswith(pattern) for mod in active_modules)
+                else:
+                    satisfied = dep in active_modules
+
+                if not satisfied:
+                    all_satisfied = False
+                    logger.debug(f"Unsatisfied dependency: {organ_name} requires {dep}")
+                    break
+
+            if all_satisfied:
+                buildable.append((organ_name, blueprint))
+
+        return buildable
+
     def _evolve_organ(self, organ_name: str, blueprint: OrganBlueprint) -> bool:
         """
         Generate and materialize a single organ.

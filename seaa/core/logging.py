@@ -98,7 +98,7 @@ def setup_logging(
 ) -> None:
     """
     Configure the root logger for SEAA.
-    
+
     Args:
         level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         format_type: 'json' for production, 'colored' for development
@@ -106,10 +106,10 @@ def setup_logging(
     """
     root_logger = logging.getLogger("seaa")
     root_logger.setLevel(getattr(logging, level.upper()))
-    
+
     # Clear existing handlers
     root_logger.handlers = []
-    
+
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     if format_type == "json":
@@ -117,13 +117,21 @@ def setup_logging(
     else:
         console_handler.setFormatter(ColoredFormatter())
     root_logger.addHandler(console_handler)
-    
+
     # Optional file handler (always JSON for parsing)
     if log_file:
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(JSONFormatter())
         root_logger.addHandler(file_handler)
-    
+
+    # Optional remote handler (with sanitization)
+    try:
+        from seaa.core.remote_logging import setup_remote_logging
+        setup_remote_logging()
+    except Exception as e:
+        # Don't crash if remote logging fails to initialize
+        pass
+
     # Prevent propagation to root logger
     root_logger.propagate = False
 
